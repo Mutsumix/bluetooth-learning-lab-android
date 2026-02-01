@@ -205,7 +205,11 @@ private fun EPaperScreenContent(
 
             // Send Button
             Button(
-                onClick = onSend,
+                onClick = {
+                    if (!isSending) {
+                        onSend()
+                    }
+                },
                 enabled = apUrl.trim().isNotEmpty() && !isSending,
                 modifier = Modifier
                     .fillMaxWidth()
@@ -224,11 +228,11 @@ private fun EPaperScreenContent(
                 ),
                 elevation = ButtonDefaults.buttonElevation(defaultElevation = 2.dp)
             ) {
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    if (isSending) {
+                if (isSending) {
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
                         CircularProgressIndicator(
                             modifier = Modifier.size(18.dp),
                             color = Color.White,
@@ -239,7 +243,12 @@ private fun EPaperScreenContent(
                             fontWeight = FontWeight.SemiBold,
                             fontSize = 16.sp
                         )
-                    } else {
+                    }
+                } else {
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
                         Icon(
                             painter = painterResource(id = R.drawable.ic_send),
                             contentDescription = "Send",

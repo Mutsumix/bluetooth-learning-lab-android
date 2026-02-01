@@ -23,27 +23,34 @@ class EPaperViewModel : ViewModel() {
     }
 
     fun send() {
-        if (_apUrl.value.trim().isEmpty()) return
+        // 基本的なバリデーション
+        val url = _apUrl.value.trim()
+        if (url.isEmpty()) return
 
         // 二重実行防止
-        if (_uiState.value is EPaperUiState.Sending) return
+        val currentState = _uiState.value
+        if (currentState is EPaperUiState.Sending) return
 
         viewModelScope.launch {
             try {
                 _uiState.value = EPaperUiState.Sending
                 _logs.value = emptyList()
 
-                // Simulate HTTP request
-                _logs.value = _logs.value + "> Connecting to AP..."
+                // Simulate HTTP request with delays
+                _logs.value = listOf("> Connecting to AP...")
                 delay(500)
+
                 _logs.value = _logs.value + "> POST /api/image"
                 delay(500)
+
                 _logs.value = _logs.value + "> Response: 200 OK"
                 delay(500)
+
                 _logs.value = _logs.value + "> (AP→BLE→ESL で転送中)"
+                delay(500)
 
                 val httpRequest = listOf(
-                    "POST ${_apUrl.value}/imgupload",
+                    "POST $url/imgupload",
                     "Content-Type: multipart/form-data",
                     "file: image.jpg (296x128)",
                     "mac: AA:BB:CC:DD:EE:FF",
@@ -52,14 +59,17 @@ class EPaperViewModel : ViewModel() {
 
                 _uiState.value = EPaperUiState.Sent(httpRequest = httpRequest)
 
-                // 3秒後にIdleに戻す（次回送信を可能にする）
+                // 3秒後にIdleに戻す
                 delay(3000)
-                _uiState.value = EPaperUiState.Idle
+                if (_uiState.value is EPaperUiState.Sent) {
+                    _uiState.value = EPaperUiState.Idle
+                }
             } catch (e: Exception) {
-                _logs.value = _logs.value + "> Error: ${e.message}"
+                e.printStackTrace()
+                _logs.value = _logs.value + "> Error: ${e.message ?: "Unknown error"}"
                 _uiState.value = EPaperUiState.Error(message = e.message ?: "Unknown error")
 
-                // エラー後もIdleに戻す
+                // エラー後Idleに戻す
                 delay(2000)
                 _uiState.value = EPaperUiState.Idle
             }
