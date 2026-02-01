@@ -185,20 +185,11 @@ private fun PrinterScreenContent(
                     ),
                     elevation = ButtonDefaults.buttonElevation(defaultElevation = 2.dp)
                 ) {
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = "🔗",
-                            fontSize = 18.sp
-                        )
-                        Text(
-                            text = if (isConnected) "切断" else "接続",
-                            fontWeight = FontWeight.SemiBold,
-                            fontSize = 16.sp
-                        )
-                    }
+                    Text(
+                        text = if (isConnected) "切断" else "接続",
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 16.sp
+                    )
                 }
                 OutlinedButton(
                     onClick = onPrint,
@@ -233,9 +224,10 @@ private fun PrinterScreenContent(
                                 strokeWidth = 2.dp
                             )
                         } else {
-                            Text(
-                                text = "🖨️",
-                                fontSize = 18.sp
+                            Icon(
+                                painter = painterResource(id = R.drawable.ic_printer),
+                                contentDescription = "Print",
+                                modifier = Modifier.size(20.dp)
                             )
                         }
                         Text(

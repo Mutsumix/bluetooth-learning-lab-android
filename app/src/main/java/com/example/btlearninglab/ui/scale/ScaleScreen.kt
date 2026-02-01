@@ -153,20 +153,11 @@ private fun ScaleScreenContent(
                     ),
                     elevation = ButtonDefaults.buttonElevation(defaultElevation = 2.dp)
                 ) {
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = "🔗",
-                            fontSize = 18.sp
-                        )
-                        Text(
-                            text = if (isConnected) "切断" else "接続",
-                            fontWeight = FontWeight.SemiBold,
-                            fontSize = 16.sp
-                        )
-                    }
+                    Text(
+                        text = if (isConnected) "切断" else "接続",
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 16.sp
+                    )
                 }
                 OutlinedButton(
                     onClick = onTare,

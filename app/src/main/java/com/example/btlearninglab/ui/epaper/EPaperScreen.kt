@@ -240,9 +240,10 @@ private fun EPaperScreenContent(
                             fontSize = 16.sp
                         )
                     } else {
-                        Text(
-                            text = "📤",
-                            fontSize = 18.sp
+                        Icon(
+                            painter = painterResource(id = R.drawable.ic_send),
+                            contentDescription = "Send",
+                            modifier = Modifier.size(20.dp)
                         )
                         Text(
                             text = "送信",
