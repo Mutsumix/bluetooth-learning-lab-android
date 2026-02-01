@@ -1,4 +1,4 @@
-package com.example.btlearninglab.ui
+package com.example.btlearninglab.ui.scale
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -16,43 +16,42 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.btlearninglab.R
 import com.example.btlearninglab.ui.theme.AppColors
 import com.example.btlearninglab.ui.components.BottomNavigationBar
 
 @Composable
-fun ScaleScreen(navController: NavController) {
-    var isConnected by remember { mutableStateOf(false) }
-    var weight by remember { mutableStateOf(125.4f) }
-    val logs = remember { mutableStateListOf<String>() }
+fun ScaleScreen(
+    navController: NavController,
+    viewModel: ScaleViewModel = viewModel()
+) {
+    val uiState by viewModel.uiState.collectAsState()
+    val logs by viewModel.logs.collectAsState()
 
-    val handleConnect = {
-        if (!isConnected) {
-            logs.clear()
-            logs.addAll(
-                listOf(
-                    "> Scanning for \"Decent Scale\"",
-                    "> Found: XX:XX:XX:XX:XX:XX",
-                    "> Connecting...",
-                    "> Subscribing to FFF4...",
-                    "> Receiving notifications"
-                )
-            )
-            isConnected = true
-        } else {
-            logs.add("> Disconnected")
-            isConnected = false
-        }
-    }
+    ScaleScreenContent(
+        navController = navController,
+        uiState = uiState,
+        logs = logs,
+        onConnect = viewModel::connect,
+        onDisconnect = viewModel::disconnect,
+        onTare = viewModel::tare
+    )
+}
 
-    val handleTare = {
-        if (isConnected) {
-            logs.add("> Sending Tare command: 03 0F 00 00 00 01 0E")
-            logs.add("> Weight reset to 0.0g")
-            weight = 0.0f
-        }
-    }
+@Composable
+private fun ScaleScreenContent(
+    navController: NavController,
+    uiState: ScaleUiState,
+    logs: List<String>,
+    onConnect: () -> Unit,
+    onDisconnect: () -> Unit,
+    onTare: () -> Unit
+) {
+    val isConnected = uiState is ScaleUiState.Connected
+    val weight = if (uiState is ScaleUiState.Connected) uiState.weight else 125.4f
+    val rawData = if (uiState is ScaleUiState.Connected) uiState.rawData else "03 CE 04 E6 00 00 2B"
 
     Box(
         modifier = Modifier
@@ -154,7 +153,7 @@ fun ScaleScreen(navController: NavController) {
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 Button(
-                    onClick = handleConnect,
+                    onClick = { if (isConnected) onDisconnect() else onConnect() },
                     modifier = Modifier
                         .weight(1f)
                         .height(56.dp),
@@ -170,7 +169,7 @@ fun ScaleScreen(navController: NavController) {
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = if (isConnected) "🔗" else "🔗",
+                            text = "🔗",
                             fontSize = 18.sp
                         )
                         Text(
@@ -181,7 +180,7 @@ fun ScaleScreen(navController: NavController) {
                     }
                 }
                 Button(
-                    onClick = handleTare,
+                    onClick = onTare,
                     enabled = isConnected,
                     modifier = Modifier
                         .weight(1f)
@@ -240,13 +239,13 @@ fun ScaleScreen(navController: NavController) {
                             verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
                             Text(
-                                text = "03 CE 04 E6 00 00 2B",
+                                text = rawData,
                                 fontSize = 12.sp,
                                 color = AppColors.Primary600,
                                 fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace
                             )
                             Text(
-                                text = "→ Weight: 1254 (125.4g)",
+                                text = "→ Weight: ${(weight * 10).toInt()} (${String.format("%.1f", weight)}g)",
                                 fontSize = 12.sp,
                                 color = AppColors.Gray500,
                                 fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace

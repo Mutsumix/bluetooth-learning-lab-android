@@ -1,4 +1,4 @@
-package com.example.btlearninglab.ui
+package com.example.btlearninglab.ui.log
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -18,57 +18,45 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.btlearninglab.R
 import com.example.btlearninglab.ui.theme.AppColors
 import com.example.btlearninglab.ui.components.BottomNavigationBar
 
-data class LogEntry(
-    val time: String,
-    val device: String,
-    val message: String,
-    val type: String
-)
+@Composable
+fun LogScreen(
+    navController: NavController,
+    viewModel: LogViewModel = viewModel()
+) {
+    val uiState by viewModel.uiState.collectAsState()
+
+    LogScreenContent(
+        navController = navController,
+        uiState = uiState,
+        onClear = viewModel::clearLogs
+    )
+}
 
 @Composable
-fun LogScreen(navController: NavController) {
-    val logs = remember {
-        listOf(
-            LogEntry("14:23:45", "Scale", "Scanning for \"Decent Scale\"", "ble"),
-            LogEntry("14:23:46", "Scale", "Found: XX:XX:XX:XX:XX:XX", "ble"),
-            LogEntry("14:23:47", "Scale", "Connected successfully", "ble"),
-            LogEntry("14:24:12", "Printer", "Pairing with SM-S210i...", "classic"),
-            LogEntry("14:24:13", "Printer", "SPP Channel: 1", "classic"),
-            LogEntry("14:24:14", "Printer", "Connected via RFCOMM", "classic"),
-            LogEntry("14:25:01", "E-Paper", "POST /api/image", "http"),
-            LogEntry("14:25:02", "E-Paper", "Response: 200 OK", "http")
-        )
-    }
-
-    fun getDeviceColor(type: String): Color {
+private fun LogScreenContent(
+    navController: NavController,
+    uiState: LogUiState,
+    onClear: () -> Unit
+) {
+    fun getDeviceColor(type: DeviceType): Color {
         return when (type) {
-            "ble" -> AppColors.ScaleIcon
-            "classic" -> AppColors.PrinterIcon
-            "http" -> AppColors.EPaperIcon
-            else -> AppColors.Gray400
+            DeviceType.SCALE -> AppColors.ScaleIcon
+            DeviceType.PRINTER -> AppColors.PrinterIcon
+            DeviceType.EPAPER -> AppColors.EPaperIcon
         }
     }
 
-    fun getDeviceBgColor(type: String): Color {
+    fun getDeviceBorderColor(type: DeviceType): Color {
         return when (type) {
-            "ble" -> AppColors.PastelMint.copy(alpha = 0.3f)
-            "classic" -> AppColors.PastelPeach.copy(alpha = 0.3f)
-            "http" -> AppColors.PastelLavender.copy(alpha = 0.3f)
-            else -> AppColors.Gray100
-        }
-    }
-
-    fun getDeviceBorderColor(type: String): Color {
-        return when (type) {
-            "ble" -> AppColors.PastelMint
-            "classic" -> AppColors.PastelPeach
-            "http" -> AppColors.PastelLavender
-            else -> AppColors.Gray300
+            DeviceType.SCALE -> AppColors.PastelMint
+            DeviceType.PRINTER -> AppColors.PastelPeach
+            DeviceType.EPAPER -> AppColors.PastelLavender
         }
     }
 
@@ -117,7 +105,7 @@ fun LogScreen(navController: NavController) {
                             )
                         }
                         IconButton(
-                            onClick = { /* クリアログ */ }
+                            onClick = onClear
                         ) {
                             Icon(
                                 painter = painterResource(id = R.drawable.ic_delete),
@@ -136,7 +124,7 @@ fun LogScreen(navController: NavController) {
                         .padding(horizontal = 16.dp, vertical = 24.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    logs.forEach { log ->
+                    uiState.logs.forEach { log ->
                         Surface(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -242,7 +230,7 @@ fun LogScreen(navController: NavController) {
                                     verticalArrangement = Arrangement.spacedBy(4.dp)
                                 ) {
                                     Text(
-                                        text = "3",
+                                        text = "${uiState.scaleCount}",
                                         fontSize = 24.sp,
                                         fontWeight = FontWeight.Bold,
                                         color = AppColors.ScaleIcon
@@ -266,7 +254,7 @@ fun LogScreen(navController: NavController) {
                                     verticalArrangement = Arrangement.spacedBy(4.dp)
                                 ) {
                                     Text(
-                                        text = "3",
+                                        text = "${uiState.printerCount}",
                                         fontSize = 24.sp,
                                         fontWeight = FontWeight.Bold,
                                         color = AppColors.PrinterIcon
@@ -290,7 +278,7 @@ fun LogScreen(navController: NavController) {
                                     verticalArrangement = Arrangement.spacedBy(4.dp)
                                 ) {
                                     Text(
-                                        text = "2",
+                                        text = "${uiState.epaperCount}",
                                         fontSize = 24.sp,
                                         fontWeight = FontWeight.Bold,
                                         color = AppColors.EPaperIcon

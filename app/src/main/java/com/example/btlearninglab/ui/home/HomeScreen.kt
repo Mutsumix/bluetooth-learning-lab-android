@@ -1,4 +1,4 @@
-package com.example.btlearninglab.ui
+package com.example.btlearninglab.ui.home
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -17,25 +17,31 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.btlearninglab.R
 import com.example.btlearninglab.navigation.Screen
 import com.example.btlearninglab.ui.theme.AppColors
 import com.example.btlearninglab.ui.components.BottomNavigationBar
 
-data class DeviceInfo(
-    val id: String,
-    val name: String,
-    val type: String,
-    val status: String,
-    val backgroundColor: Color,
-    val borderColor: Color,
-    val iconColor: Color,
-    val route: String
-)
+@Composable
+fun HomeScreen(
+    navController: NavController,
+    viewModel: HomeViewModel = viewModel()
+) {
+    val uiState by viewModel.uiState.collectAsState()
+
+    HomeScreenContent(
+        navController = navController,
+        uiState = uiState
+    )
+}
 
 @Composable
-fun HomeScreen(navController: NavController) {
+private fun HomeScreenContent(
+    navController: NavController,
+    uiState: HomeUiState
+) {
     val devices = remember {
         listOf(
             DeviceInfo(
@@ -70,8 +76,6 @@ fun HomeScreen(navController: NavController) {
             )
         )
     }
-
-    val logs = remember { mutableStateListOf<String>() }
 
     Box(
         modifier = Modifier
@@ -185,9 +189,9 @@ fun HomeScreen(navController: NavController) {
                             .background(AppColors.Gray50.copy(alpha = 0.5f))
                             .padding(20.dp)
                             .heightIn(min = 120.dp),
-                        contentAlignment = if (logs.isEmpty()) Alignment.Center else Alignment.TopStart
+                        contentAlignment = if (uiState.recentLogs.isEmpty()) Alignment.Center else Alignment.TopStart
                     ) {
-                        if (logs.isEmpty()) {
+                        if (uiState.recentLogs.isEmpty()) {
                             Text(
                                 text = "(起動時は空)",
                                 fontSize = 14.sp,
@@ -198,7 +202,7 @@ fun HomeScreen(navController: NavController) {
                             Column(
                                 verticalArrangement = Arrangement.spacedBy(8.dp)
                             ) {
-                                logs.forEach { log ->
+                                uiState.recentLogs.forEach { log ->
                                     Text(
                                         text = log,
                                         fontSize = 12.sp,
