@@ -17,7 +17,7 @@ class ScaleViewModelFactory(
             val permissionHelper = PermissionHelper(application.applicationContext)
 
             @Suppress("UNCHECKED_CAST")
-            return ScaleViewModel(bleClient, bluetoothManager, permissionHelper) as T
+            return ScaleViewModel(bleClient, bluetoothManager, permissionHelper, application) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")
     }

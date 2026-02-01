@@ -122,18 +122,27 @@ private fun ScaleScreenContent(
                         .padding(32.dp),
                     contentAlignment = Alignment.Center
                 ) {
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
+                    if (isConnected) {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Text(
+                                text = String.format("%.1f", weight),
+                                fontSize = 60.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = AppColors.Emerald600
+                            )
+                            Text(
+                                text = "g",
+                                fontSize = 24.sp,
+                                color = AppColors.Gray400
+                            )
+                        }
+                    } else {
                         Text(
-                            text = String.format("%.1f", weight),
-                            fontSize = 60.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = AppColors.Emerald600
-                        )
-                        Text(
-                            text = "g",
-                            fontSize = 24.sp,
+                            text = "未接続",
+                            fontSize = 36.sp,
+                            fontWeight = FontWeight.Medium,
                             color = AppColors.Gray400
                         )
                     }
@@ -222,21 +231,31 @@ private fun ScaleScreenContent(
                         modifier = Modifier
                             .fillMaxWidth()
                             .background(AppColors.Gray50.copy(alpha = 0.5f))
-                            .padding(20.dp)
+                            .padding(20.dp),
+                        contentAlignment = if (!isConnected) Alignment.Center else Alignment.TopStart
                     ) {
-                        Column(
-                            verticalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
+                        if (isConnected) {
+                            Column(
+                                verticalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Text(
+                                    text = rawData,
+                                    fontSize = 12.sp,
+                                    color = AppColors.Primary600,
+                                    fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace
+                                )
+                                Text(
+                                    text = "→ Weight: ${(weight * 10).toInt()} (${String.format("%.1f", weight)}g)",
+                                    fontSize = 12.sp,
+                                    color = AppColors.Gray500,
+                                    fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace
+                                )
+                            }
+                        } else {
                             Text(
-                                text = rawData,
+                                text = "(接続してください)",
                                 fontSize = 12.sp,
-                                color = AppColors.Primary600,
-                                fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace
-                            )
-                            Text(
-                                text = "→ Weight: ${(weight * 10).toInt()} (${String.format("%.1f", weight)}g)",
-                                fontSize = 12.sp,
-                                color = AppColors.Gray500,
+                                color = AppColors.Gray400,
                                 fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace
                             )
                         }

@@ -1,7 +1,10 @@
 package com.example.btlearninglab.ui.epaper
 
+import android.app.Application
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -12,6 +15,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -21,23 +26,42 @@ import androidx.navigation.NavController
 import com.example.btlearninglab.R
 import com.example.btlearninglab.ui.theme.AppColors
 import com.example.btlearninglab.ui.components.BottomNavigationBar
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 @Composable
 fun EPaperScreen(
     navController: NavController,
-    viewModel: EPaperViewModel = viewModel()
+    viewModel: EPaperViewModel = viewModel(
+        factory = EPaperViewModelFactory(
+            LocalContext.current.applicationContext as Application
+        )
+    )
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val logs by viewModel.logs.collectAsState()
     val apUrl by viewModel.apUrl.collectAsState()
+    val macAddress by viewModel.macAddress.collectAsState()
+    val ditherEnabled by viewModel.ditherEnabled.collectAsState()
+    val savedTags by viewModel.savedTags.collectAsState()
+    val currentWeight by viewModel.currentWeight.collectAsState()
 
     EPaperScreenContent(
         navController = navController,
         uiState = uiState,
         logs = logs,
         apUrl = apUrl,
+        macAddress = macAddress,
+        ditherEnabled = ditherEnabled,
+        savedTags = savedTags,
+        currentWeight = currentWeight,
         onApUrlChange = viewModel::updateApUrl,
-        onSend = viewModel::send
+        onMacAddressChange = viewModel::updateMacAddress,
+        onDitherChange = viewModel::updateDitherEnabled,
+        onTagSelect = viewModel::selectTag,
+        onSend = viewModel::send,
+        onRefreshWeight = viewModel::refreshWeight
     )
 }
 
@@ -47,24 +71,63 @@ private fun EPaperScreenContent(
     uiState: EPaperUiState,
     logs: List<String>,
     apUrl: String,
+    macAddress: String,
+    ditherEnabled: Boolean,
+    savedTags: List<com.example.btlearninglab.data.epaper.EPaperTag>,
+    currentWeight: Double,
     onApUrlChange: (String) -> Unit,
-    onSend: () -> Unit
+    onMacAddressChange: (String) -> Unit,
+    onDitherChange: (Boolean) -> Unit,
+    onTagSelect: (com.example.btlearninglab.data.epaper.EPaperTag) -> Unit,
+    onSend: () -> Unit,
+    onRefreshWeight: () -> Unit
 ) {
     val isSending = uiState is EPaperUiState.Sending
     val httpRequest = if (uiState is EPaperUiState.Sent) uiState.httpRequest else null
+    val errorMessage = if (uiState is EPaperUiState.Error) uiState.message else null
+    val focusManager = LocalFocusManager.current
+    val snackbarHostState = remember { SnackbarHostState() }
 
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(
-                brush = Brush.verticalGradient(
-                    colors = listOf(AppColors.Primary50, Color.White)
+    // Show snackbar on success/error
+    LaunchedEffect(uiState) {
+        when (uiState) {
+            is EPaperUiState.Sent -> {
+                snackbarHostState.showSnackbar(
+                    message = "✓ 送信成功！E-Paperに書き込まれました",
+                    duration = SnackbarDuration.Short
                 )
-            )
-    ) {
-        Column(
-            modifier = Modifier.fillMaxSize()
+            }
+            is EPaperUiState.Error -> {
+                snackbarHostState.showSnackbar(
+                    message = "✗ エラー: ${uiState.message}",
+                    duration = SnackbarDuration.Long
+                )
+            }
+            else -> {}
+        }
+    }
+
+    Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) }
+    ) { paddingValues ->
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
+                .background(
+                    brush = Brush.verticalGradient(
+                        colors = listOf(AppColors.Primary50, Color.White)
+                    )
+                )
+                .clickable(
+                    onClick = { focusManager.clearFocus() },
+                    indication = null,
+                    interactionSource = remember { MutableInteractionSource() }
+                )
         ) {
+            Column(
+                modifier = Modifier.fillMaxSize()
+            ) {
             Column(
                 modifier = Modifier
                     .weight(1f)
@@ -101,39 +164,192 @@ private fun EPaperScreenContent(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 24.dp, vertical = 32.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                Text(
-                    text = "AP設定",
-                    fontSize = 14.sp,
-                    color = AppColors.Gray500
-                )
+                // AP URL
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(
+                        text = "AP URL",
+                        fontSize = 14.sp,
+                        color = AppColors.Gray500
+                    )
+                    Surface(
+                        shape = RoundedCornerShape(12.dp),
+                        color = Color.White,
+                        shadowElevation = 2.dp
+                    ) {
+                        TextField(
+                            value = apUrl,
+                            onValueChange = onApUrlChange,
+                            modifier = Modifier.fillMaxWidth(),
+                            placeholder = {
+                                Text(
+                                    text = "192.168.1.100",
+                                    color = AppColors.Gray400
+                                )
+                            },
+                            colors = TextFieldDefaults.colors(
+                                focusedContainerColor = Color.White,
+                                unfocusedContainerColor = Color.White,
+                                disabledContainerColor = Color.White,
+                                focusedIndicatorColor = AppColors.Purple400,
+                                unfocusedIndicatorColor = AppColors.PastelLavender,
+                                focusedTextColor = AppColors.Gray800,
+                                unfocusedTextColor = AppColors.Gray800
+                            ),
+                            textStyle = LocalTextStyle.current.copy(fontSize = 14.sp)
+                        )
+                    }
+                }
+
+                // Saved Tags Dropdown
+                if (savedTags.isNotEmpty()) {
+                    var expanded by remember { mutableStateOf(false) }
+
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text(
+                            text = "保存済みタグ",
+                            fontSize = 14.sp,
+                            color = AppColors.Gray500
+                        )
+                        Surface(
+                            shape = RoundedCornerShape(12.dp),
+                            color = Color.White,
+                            shadowElevation = 2.dp,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Box {
+                                TextButton(
+                                    onClick = { expanded = true },
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Text(
+                                            text = "タグを選択",
+                                            fontSize = 14.sp,
+                                            color = AppColors.Gray700
+                                        )
+                                        Text(
+                                            text = "▼",
+                                            fontSize = 12.sp,
+                                            color = AppColors.Gray500
+                                        )
+                                    }
+                                }
+                                DropdownMenu(
+                                    expanded = expanded,
+                                    onDismissRequest = { expanded = false }
+                                ) {
+                                    savedTags.forEach { tag ->
+                                        DropdownMenuItem(
+                                            text = {
+                                                Column {
+                                                    Text(
+                                                        text = tag.name,
+                                                        fontWeight = FontWeight.Bold,
+                                                        fontSize = 14.sp
+                                                    )
+                                                    Text(
+                                                        text = "${tag.ipAddress} / ${tag.macAddress.takeLast(8)}",
+                                                        fontSize = 12.sp,
+                                                        color = AppColors.Gray500
+                                                    )
+                                                }
+                                            },
+                                            onClick = {
+                                                onTagSelect(tag)
+                                                expanded = false
+                                            }
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // MAC Address
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(
+                        text = "電子タグのMACアドレス",
+                        fontSize = 14.sp,
+                        color = AppColors.Gray500
+                    )
+                    Surface(
+                        shape = RoundedCornerShape(12.dp),
+                        color = Color.White,
+                        shadowElevation = 2.dp
+                    ) {
+                        TextField(
+                            value = macAddress,
+                            onValueChange = onMacAddressChange,
+                            modifier = Modifier.fillMaxWidth(),
+                            placeholder = {
+                                Text(
+                                    text = "AA:BB:CC:DD:EE:FF",
+                                    color = AppColors.Gray400
+                                )
+                            },
+                            colors = TextFieldDefaults.colors(
+                                focusedContainerColor = Color.White,
+                                unfocusedContainerColor = Color.White,
+                                disabledContainerColor = Color.White,
+                                focusedIndicatorColor = AppColors.Purple400,
+                                unfocusedIndicatorColor = AppColors.PastelLavender,
+                                focusedTextColor = AppColors.Gray800,
+                                unfocusedTextColor = AppColors.Gray800
+                            ),
+                            textStyle = LocalTextStyle.current.copy(fontSize = 14.sp)
+                        )
+                    }
+                }
+
+                // Dithering
                 Surface(
                     shape = RoundedCornerShape(12.dp),
                     color = Color.White,
                     shadowElevation = 2.dp
                 ) {
-                    TextField(
-                        value = apUrl,
-                        onValueChange = onApUrlChange,
-                        modifier = Modifier.fillMaxWidth(),
-                        placeholder = {
-                            Text(
-                                text = "http://192.168.1.100",
-                                color = AppColors.Gray400
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 12.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "ディザリング",
+                            fontSize = 14.sp,
+                            color = AppColors.Gray700
+                        )
+                        Switch(
+                            checked = ditherEnabled,
+                            onCheckedChange = onDitherChange,
+                            colors = SwitchDefaults.colors(
+                                checkedThumbColor = AppColors.Primary400,
+                                checkedTrackColor = AppColors.Primary100
                             )
-                        },
-                        colors = TextFieldDefaults.colors(
-                            focusedContainerColor = Color.White,
-                            unfocusedContainerColor = Color.White,
-                            disabledContainerColor = Color.White,
-                            focusedIndicatorColor = AppColors.Purple400,
-                            unfocusedIndicatorColor = AppColors.PastelLavender,
-                            focusedTextColor = AppColors.Gray800,
-                            unfocusedTextColor = AppColors.Gray800
-                        ),
-                        textStyle = LocalTextStyle.current.copy(fontSize = 14.sp)
-                    )
+                        )
+                    }
+                }
+
+                // Error message
+                if (errorMessage != null) {
+                    Surface(
+                        shape = RoundedCornerShape(8.dp),
+                        color = Color(0xFFFFEBEE)
+                    ) {
+                        Text(
+                            text = errorMessage,
+                            fontSize = 12.sp,
+                            color = Color(0xFFC62828),
+                            modifier = Modifier.padding(12.dp)
+                        )
+                    }
                 }
             }
 
@@ -144,11 +360,24 @@ private fun EPaperScreenContent(
                     .padding(horizontal = 24.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                Text(
-                    text = "Preview (296x128)",
-                    fontSize = 14.sp,
-                    color = AppColors.Gray500
-                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "プレビュー (296x128)",
+                        fontSize = 14.sp,
+                        color = AppColors.Gray500
+                    )
+                    TextButton(onClick = onRefreshWeight) {
+                        Text(
+                            text = "更新",
+                            fontSize = 12.sp,
+                            color = AppColors.Primary400
+                        )
+                    }
+                }
                 Surface(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -178,23 +407,33 @@ private fun EPaperScreenContent(
                                         width = 1.dp,
                                         color = AppColors.Gray300,
                                         shape = RoundedCornerShape(8.dp)
-                                    ),
-                                contentAlignment = Alignment.Center
+                                    )
+                                    .padding(8.dp),
+                                contentAlignment = Alignment.TopStart
                             ) {
+                                val dateFormatter = remember { SimpleDateFormat("yyyy/MM/dd", Locale.JAPAN) }
+                                val currentDate = remember { dateFormatter.format(Date()) }
+
                                 Column(
-                                    horizontalAlignment = Alignment.CenterHorizontally
+                                    modifier = Modifier.fillMaxWidth()
                                 ) {
                                     Text(
-                                        text = "Hello!",
-                                        fontSize = 36.sp,
-                                        fontWeight = FontWeight.Bold,
+                                        text = currentDate,
+                                        fontSize = 10.sp,
                                         color = AppColors.Gray700
                                     )
+                                    Spacer(modifier = Modifier.height(8.dp))
                                     Text(
-                                        text = "Demo Image",
-                                        fontSize = 18.sp,
-                                        color = AppColors.Gray500,
-                                        modifier = Modifier.padding(top = 8.dp)
+                                        text = "現在の重さ:",
+                                        fontSize = 12.sp,
+                                        color = AppColors.Gray700
+                                    )
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                    Text(
+                                        text = String.format(Locale.JAPAN, "%.1f g", currentWeight),
+                                        fontSize = 24.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = AppColors.Gray800
                                     )
                                 }
                             }
@@ -204,23 +443,24 @@ private fun EPaperScreenContent(
             }
 
             // Send Button
+            val canSend = apUrl.trim().isNotEmpty() && macAddress.trim().isNotEmpty() && !isSending
             Button(
                 onClick = {
                     if (!isSending) {
                         onSend()
                     }
                 },
-                enabled = apUrl.trim().isNotEmpty() && !isSending,
+                enabled = canSend,
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 24.dp, vertical = 24.dp)
                     .height(56.dp),
                 shape = RoundedCornerShape(12.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = if (apUrl.trim().isNotEmpty() && !isSending)
+                    containerColor = if (canSend)
                         AppColors.Primary400
                     else AppColors.Gray100,
-                    contentColor = if (apUrl.trim().isNotEmpty() && !isSending)
+                    contentColor = if (canSend)
                         Color.White
                     else AppColors.Gray400,
                     disabledContainerColor = AppColors.Gray100,
@@ -229,21 +469,11 @@ private fun EPaperScreenContent(
                 elevation = ButtonDefaults.buttonElevation(defaultElevation = 2.dp)
             ) {
                 if (isSending) {
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(18.dp),
-                            color = Color.White,
-                            strokeWidth = 2.dp
-                        )
-                        Text(
-                            text = "送信中...",
-                            fontWeight = FontWeight.SemiBold,
-                            fontSize = 16.sp
-                        )
-                    }
+                    Text(
+                        text = "送信中...",
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 16.sp
+                    )
                 } else {
                     Row(
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -355,8 +585,7 @@ private fun EPaperScreenContent(
                         modifier = Modifier
                             .fillMaxWidth()
                             .background(AppColors.Gray50.copy(alpha = 0.5f))
-                            .padding(20.dp)
-                            .heightIn(min = 100.dp, max = 200.dp),
+                            .heightIn(min = 100.dp, max = 300.dp),
                         contentAlignment = if (logs.isEmpty()) Alignment.Center else Alignment.TopStart
                     ) {
                         if (logs.isEmpty()) {
@@ -368,6 +597,10 @@ private fun EPaperScreenContent(
                             )
                         } else {
                             Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .verticalScroll(rememberScrollState())
+                                    .padding(20.dp),
                                 verticalArrangement = Arrangement.spacedBy(6.dp)
                             ) {
                                 logs.forEach { log ->
@@ -385,7 +618,8 @@ private fun EPaperScreenContent(
             }
             }
 
-            BottomNavigationBar(navController = navController)
+                BottomNavigationBar(navController = navController)
+            }
         }
     }
 }

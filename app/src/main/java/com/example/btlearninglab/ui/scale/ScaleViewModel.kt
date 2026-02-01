@@ -1,11 +1,13 @@
 package com.example.btlearninglab.ui.scale
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.btlearninglab.data.ble.BleConnectionState
 import com.example.btlearninglab.data.ble.BluetoothManager
 import com.example.btlearninglab.data.ble.DecentScaleBleClient
 import com.example.btlearninglab.data.ble.PermissionHelper
+import com.example.btlearninglab.data.scale.WeightRepository
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -15,8 +17,10 @@ import kotlinx.coroutines.launch
 class ScaleViewModel(
     private val bleClient: DecentScaleBleClient,
     private val bluetoothManager: BluetoothManager,
-    private val permissionHelper: PermissionHelper
+    private val permissionHelper: PermissionHelper,
+    context: Context
 ) : ViewModel() {
+    private val weightRepository = WeightRepository(context)
     private val _uiState = MutableStateFlow<ScaleUiState>(ScaleUiState.Disconnected)
     val uiState: StateFlow<ScaleUiState> = _uiState.asStateFlow()
 
@@ -141,6 +145,8 @@ class ScaleViewModel(
                         weight = it.weight,
                         rawData = it.rawHex
                     )
+                    // Save weight data to repository
+                    weightRepository.saveWeight(it.weight.toDouble())
                 }
             }
         }
