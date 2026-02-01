@@ -226,20 +226,18 @@ fun DeviceCard(
     Surface(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick),
+            .clickable(onClick = onClick)
+            .border(
+                width = 1.dp,
+                color = device.borderColor,
+                shape = RoundedCornerShape(16.dp)
+            ),
         shape = RoundedCornerShape(16.dp),
-        color = Color.White.copy(alpha = 0.5f),
+        color = Color.White,
         shadowElevation = 2.dp
     ) {
         Box(
-            modifier = Modifier
-                .background(device.backgroundColor)
-                .border(
-                    width = 1.dp,
-                    color = device.borderColor,
-                    shape = RoundedCornerShape(16.dp)
-                )
-                .padding(20.dp)
+            modifier = Modifier.padding(20.dp)
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -251,7 +249,12 @@ fun DeviceCard(
                     modifier = Modifier
                         .size(48.dp)
                         .clip(RoundedCornerShape(12.dp))
-                        .background(Color.White),
+                        .background(Color.White)
+                        .border(
+                            width = 1.dp,
+                            color = AppColors.Gray100,
+                            shape = RoundedCornerShape(12.dp)
+                        ),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
@@ -265,7 +268,7 @@ fun DeviceCard(
                         ),
                         contentDescription = device.name,
                         modifier = Modifier.size(28.dp),
-                        tint = AppColors.Gray400
+                        tint = device.iconColor
                     )
                 }
 
@@ -305,10 +308,11 @@ fun DeviceCard(
                 }
 
                 // Arrow
-                Text(
-                    text = "›",
-                    fontSize = 32.sp,
-                    color = AppColors.Gray300
+                Icon(
+                    painter = painterResource(id = R.drawable.ic_arrow_right),
+                    contentDescription = "Navigate",
+                    modifier = Modifier.size(24.dp),
+                    tint = AppColors.Gray300
                 )
             }
         }

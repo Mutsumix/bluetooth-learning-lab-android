@@ -4,28 +4,28 @@
         "source": "com.example.btlearninglab.app-main-57:/drawable/ic_delete.xml"
     },
     {
+        "merged": "com.example.btlearninglab.app-debug-55:/drawable_ic_launcher_background.xml.flat",
+        "source": "com.example.btlearninglab.app-main-57:/drawable/ic_launcher_background.xml"
+    },
+    {
         "merged": "com.example.btlearninglab.app-debug-55:/drawable_ic_bluetooth.xml.flat",
         "source": "com.example.btlearninglab.app-main-57:/drawable/ic_bluetooth.xml"
     },
     {
-        "merged": "/Users/mkajihara/.gradle/daemon/8.13/com.example.btlearninglab.app-debug-55:/drawable_ic_launcher_background.xml.flat",
-        "source": "/Users/mkajihara/.gradle/daemon/8.13/com.example.btlearninglab.app-main-57:/drawable/ic_launcher_background.xml"
+        "merged": "com.example.btlearninglab.app-debug-55:/xml_backup_rules.xml.flat",
+        "source": "com.example.btlearninglab.app-main-57:/xml/backup_rules.xml"
     },
     {
-        "merged": "/Users/mkajihara/.gradle/daemon/8.13/com.example.btlearninglab.app-debug-55:/mipmap-anydpi-v26_ic_launcher.xml.flat",
-        "source": "/Users/mkajihara/.gradle/daemon/8.13/com.example.btlearninglab.app-main-57:/mipmap-anydpi-v26/ic_launcher.xml"
+        "merged": "com.example.btlearninglab.app-debug-55:/xml_data_extraction_rules.xml.flat",
+        "source": "com.example.btlearninglab.app-main-57:/xml/data_extraction_rules.xml"
     },
     {
-        "merged": "/Users/mkajihara/.gradle/daemon/8.13/com.example.btlearninglab.app-debug-55:/drawable_ic_launcher.xml.flat",
-        "source": "/Users/mkajihara/.gradle/daemon/8.13/com.example.btlearninglab.app-main-57:/drawable/ic_launcher.xml"
+        "merged": "com.example.btlearninglab.app-debug-55:/mipmap-anydpi-v26_ic_launcher_round.xml.flat",
+        "source": "com.example.btlearninglab.app-main-57:/mipmap-anydpi-v26/ic_launcher_round.xml"
     },
     {
-        "merged": "/Users/mkajihara/.gradle/daemon/8.13/com.example.btlearninglab.app-debug-55:/xml_data_extraction_rules.xml.flat",
-        "source": "/Users/mkajihara/.gradle/daemon/8.13/com.example.btlearninglab.app-main-57:/xml/data_extraction_rules.xml"
-    },
-    {
-        "merged": "/Users/mkajihara/.gradle/daemon/8.13/com.example.btlearninglab.app-debug-55:/drawable_ic_launcher_foreground.xml.flat",
-        "source": "/Users/mkajihara/.gradle/daemon/8.13/com.example.btlearninglab.app-main-57:/drawable/ic_launcher_foreground.xml"
+        "merged": "com.example.btlearninglab.app-debug-55:/mipmap-anydpi-v26_ic_launcher.xml.flat",
+        "source": "com.example.btlearninglab.app-main-57:/mipmap-anydpi-v26/ic_launcher.xml"
     },
     {
         "merged": "com.example.btlearninglab.app-debug-55:/drawable_ic_log.xml.flat",
@@ -40,10 +40,6 @@
         "source": "com.example.btlearninglab.app-main-57:/drawable/ic_scale.xml"
     },
     {
-        "merged": "/Users/mkajihara/.gradle/daemon/8.13/com.example.btlearninglab.app-debug-55:/mipmap-anydpi-v26_ic_launcher_round.xml.flat",
-        "source": "/Users/mkajihara/.gradle/daemon/8.13/com.example.btlearninglab.app-main-57:/mipmap-anydpi-v26/ic_launcher_round.xml"
-    },
-    {
         "merged": "com.example.btlearninglab.app-debug-55:/drawable_ic_epaper.xml.flat",
         "source": "com.example.btlearninglab.app-main-57:/drawable/ic_epaper.xml"
     },
@@ -52,7 +48,11 @@
         "source": "com.example.btlearninglab.app-main-57:/drawable/ic_home.xml"
     },
     {
-        "merged": "/Users/mkajihara/.gradle/daemon/8.13/com.example.btlearninglab.app-debug-55:/xml_backup_rules.xml.flat",
-        "source": "/Users/mkajihara/.gradle/daemon/8.13/com.example.btlearninglab.app-main-57:/xml/backup_rules.xml"
+        "merged": "com.example.btlearninglab.app-debug-55:/drawable_ic_launcher_foreground.xml.flat",
+        "source": "com.example.btlearninglab.app-main-57:/drawable/ic_launcher_foreground.xml"
+    },
+    {
+        "merged": "com.example.btlearninglab.app-debug-55:/drawable_ic_launcher.xml.flat",
+        "source": "com.example.btlearninglab.app-main-57:/drawable/ic_launcher.xml"
     }
 ]
