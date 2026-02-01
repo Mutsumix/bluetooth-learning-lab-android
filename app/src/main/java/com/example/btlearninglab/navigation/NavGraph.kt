@@ -1,5 +1,9 @@
 package com.example.btlearninglab.navigation
 
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.runtime.Composable
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -24,21 +28,45 @@ fun NavGraph() {
 
     NavHost(
         navController = navController,
-        startDestination = Screen.Home.route
+        startDestination = Screen.Home.route,
+        enterTransition = { fadeIn() },
+        exitTransition = { fadeOut() },
+        popEnterTransition = { fadeIn() },
+        popExitTransition = { fadeOut() }
     ) {
-        composable(Screen.Home.route) {
+        composable(
+            route = Screen.Home.route,
+            enterTransition = { fadeIn() },
+            exitTransition = { fadeOut() }
+        ) {
             HomeScreen(navController = navController)
         }
-        composable(Screen.Scale.route) {
+        composable(
+            route = Screen.Scale.route,
+            enterTransition = { fadeIn() },
+            exitTransition = { fadeOut() }
+        ) {
             ScaleScreen(navController = navController)
         }
-        composable(Screen.Printer.route) {
+        composable(
+            route = Screen.Printer.route,
+            enterTransition = { fadeIn() },
+            exitTransition = { fadeOut() }
+        ) {
             PrinterScreen(navController = navController)
         }
-        composable(Screen.EPaper.route) {
+        composable(
+            route = Screen.EPaper.route,
+            enterTransition = { fadeIn() },
+            exitTransition = { fadeOut() }
+        ) {
             EPaperScreen(navController = navController)
         }
-        composable(Screen.Log.route) {
+        composable(
+            route = Screen.Log.route,
+            enterTransition = { fadeIn() },
+            exitTransition = { fadeOut() }
+        ) {
             LogScreen(navController = navController)
         }
     }
