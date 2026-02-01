@@ -8,11 +8,11 @@ import androidx.compose.runtime.Composable
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.example.btlearninglab.ui.EPaperScreen
-import com.example.btlearninglab.ui.HomeScreen
-import com.example.btlearninglab.ui.LogScreen
-import com.example.btlearninglab.ui.PrinterScreen
-import com.example.btlearninglab.ui.ScaleScreen
+import com.example.btlearninglab.ui.epaper.EPaperScreen
+import com.example.btlearninglab.ui.home.HomeScreen
+import com.example.btlearninglab.ui.log.LogScreen
+import com.example.btlearninglab.ui.printer.PrinterScreen
+import com.example.btlearninglab.ui.scale.ScaleScreen
 
 sealed class Screen(val route: String) {
     object Home : Screen("home")
