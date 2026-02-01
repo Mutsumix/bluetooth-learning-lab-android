@@ -13,10 +13,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import com.example.btlearninglab.R
 import com.example.btlearninglab.navigation.Screen
 import com.example.btlearninglab.ui.theme.AppColors
 import com.example.btlearninglab.ui.components.BottomNavigationBar
@@ -102,7 +104,7 @@ fun HomeScreen(navController: NavController) {
                     Box(
                         modifier = Modifier
                             .size(40.dp)
-                            .clip(CircleShape)
+                            .clip(RoundedCornerShape(8.dp))
                             .background(
                                 brush = Brush.linearGradient(
                                     colors = listOf(AppColors.Primary400, AppColors.Primary500)
@@ -110,11 +112,11 @@ fun HomeScreen(navController: NavController) {
                             ),
                         contentAlignment = Alignment.Center
                     ) {
-                        Text(
-                            text = "B",
-                            fontSize = 20.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Color.White
+                        Icon(
+                            painter = painterResource(id = R.drawable.ic_bluetooth),
+                            contentDescription = "Bluetooth",
+                            modifier = Modifier.size(24.dp),
+                            tint = Color.White
                         )
                     }
                     Text(
@@ -164,9 +166,11 @@ fun HomeScreen(navController: NavController) {
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        Text(
-                            text = "📋",
-                            fontSize = 16.sp
+                        Icon(
+                            painter = painterResource(id = R.drawable.ic_log),
+                            contentDescription = "Log",
+                            modifier = Modifier.size(20.dp),
+                            tint = AppColors.Primary500
                         )
                         Text(
                             text = "通信ログ",
@@ -250,14 +254,18 @@ fun DeviceCard(
                         .background(Color.White),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text(
-                        text = when (device.id) {
-                            "scale" -> "⚖️"
-                            "printer" -> "🖨️"
-                            "epaper" -> "📄"
-                            else -> "📱"
-                        },
-                        fontSize = 24.sp
+                    Icon(
+                        painter = painterResource(
+                            id = when (device.id) {
+                                "scale" -> R.drawable.ic_scale
+                                "printer" -> R.drawable.ic_printer
+                                "epaper" -> R.drawable.ic_epaper
+                                else -> R.drawable.ic_bluetooth
+                            }
+                        ),
+                        contentDescription = device.name,
+                        modifier = Modifier.size(28.dp),
+                        tint = AppColors.Gray400
                     )
                 }
 

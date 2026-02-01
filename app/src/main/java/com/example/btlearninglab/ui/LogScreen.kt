@@ -4,18 +4,22 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import com.example.btlearninglab.R
 import com.example.btlearninglab.ui.theme.AppColors
 import com.example.btlearninglab.ui.components.BottomNavigationBar
 
@@ -115,9 +119,11 @@ fun LogScreen(navController: NavController) {
                         IconButton(
                             onClick = { /* クリアログ */ }
                         ) {
-                            Text(
-                                text = "🗑️",
-                                fontSize = 20.sp
+                            Icon(
+                                painter = painterResource(id = R.drawable.ic_delete),
+                                contentDescription = "Clear log",
+                                modifier = Modifier.size(24.dp),
+                                tint = AppColors.Gray400
                             )
                         }
                     }
@@ -164,12 +170,23 @@ fun LogScreen(navController: NavController) {
                                         modifier = Modifier.weight(1f),
                                         verticalArrangement = Arrangement.spacedBy(4.dp)
                                     ) {
-                                        Text(
-                                            text = log.device,
-                                            fontSize = 14.sp,
-                                            fontWeight = FontWeight.SemiBold,
-                                            color = getDeviceColor(log.type)
-                                        )
+                                        Row(
+                                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Box(
+                                                modifier = Modifier
+                                                    .size(8.dp)
+                                                    .clip(CircleShape)
+                                                    .background(getDeviceColor(log.type))
+                                            )
+                                            Text(
+                                                text = log.device,
+                                                fontSize = 14.sp,
+                                                fontWeight = FontWeight.SemiBold,
+                                                color = getDeviceColor(log.type)
+                                            )
+                                        }
                                         Text(
                                             text = log.message,
                                             fontSize = 14.sp,

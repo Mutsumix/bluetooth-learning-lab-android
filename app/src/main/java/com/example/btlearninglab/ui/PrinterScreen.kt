@@ -12,10 +12,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import com.example.btlearninglab.R
 import com.example.btlearninglab.ui.theme.AppColors
 import com.example.btlearninglab.ui.components.BottomNavigationBar
 
@@ -302,9 +304,11 @@ fun PrinterScreen(navController: NavController) {
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        Text(
-                            text = "📋",
-                            fontSize = 14.sp
+                        Icon(
+                            painter = painterResource(id = R.drawable.ic_log),
+                            contentDescription = "Log",
+                            modifier = Modifier.size(18.dp),
+                            tint = AppColors.Primary500
                         )
                         Text(
                             text = "通信ログ",
