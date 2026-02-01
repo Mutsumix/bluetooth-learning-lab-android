@@ -138,19 +138,20 @@ fun LogScreen(navController: NavController) {
                 ) {
                     logs.forEach { log ->
                         Surface(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .border(
+                                    width = 1.dp,
+                                    color = getDeviceBorderColor(log.type),
+                                    shape = RoundedCornerShape(12.dp)
+                                ),
                             shape = RoundedCornerShape(12.dp),
-                            color = Color.White.copy(alpha = 0.5f),
-                            shadowElevation = 2.dp
+                            color = Color.White,
+                            shadowElevation = 1.dp
                         ) {
                             Box(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .background(getDeviceBgColor(log.type))
-                                    .border(
-                                        width = 1.dp,
-                                        color = getDeviceBorderColor(log.type),
-                                        shape = RoundedCornerShape(12.dp)
-                                    )
                                     .padding(16.dp)
                             ) {
                                 Row(
@@ -205,10 +206,15 @@ fun LogScreen(navController: NavController) {
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp)
-                        .padding(bottom = 24.dp),
+                        .padding(bottom = 24.dp)
+                        .border(
+                            width = 1.dp,
+                            color = AppColors.Primary100,
+                            shape = RoundedCornerShape(16.dp)
+                        ),
                     shape = RoundedCornerShape(16.dp),
                     color = Color.White,
-                    shadowElevation = 2.dp
+                    shadowElevation = 1.dp
                 ) {
                     Column(
                         modifier = Modifier.padding(20.dp),

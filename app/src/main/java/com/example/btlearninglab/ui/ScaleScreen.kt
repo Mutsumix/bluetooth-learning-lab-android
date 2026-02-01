@@ -207,20 +207,20 @@ fun ScaleScreen(navController: NavController) {
             Surface(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 24.dp, vertical = 24.dp),
+                    .padding(horizontal = 24.dp, vertical = 24.dp)
+                    .border(
+                        width = 1.dp,
+                        color = AppColors.Primary100,
+                        shape = RoundedCornerShape(16.dp)
+                    ),
                 shape = RoundedCornerShape(16.dp),
                 color = Color.White,
-                shadowElevation = 2.dp
+                shadowElevation = 1.dp
             ) {
                 Column {
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .border(
-                                width = 1.dp,
-                                color = AppColors.Primary50,
-                                shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp)
-                            )
                             .padding(horizontal = 20.dp, vertical = 12.dp)
                     ) {
                         Text(
@@ -261,20 +261,20 @@ fun ScaleScreen(navController: NavController) {
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 24.dp)
-                    .padding(bottom = 24.dp),
+                    .padding(bottom = 24.dp)
+                    .border(
+                        width = 1.dp,
+                        color = AppColors.Primary100,
+                        shape = RoundedCornerShape(16.dp)
+                    ),
                 shape = RoundedCornerShape(16.dp),
                 color = Color.White,
-                shadowElevation = 2.dp
+                shadowElevation = 1.dp
             ) {
                 Column {
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .border(
-                                width = 1.dp,
-                                color = AppColors.Primary50,
-                                shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp)
-                            )
                             .padding(horizontal = 20.dp, vertical = 12.dp),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
