@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">BT Learning Lab</string>
+    <string name="home_screen">Home</string>
+    <string name="scale_screen">Scale</string>
+    <string name="printer_screen">Printer</string>
+    <string name="epaper_screen">E-Paper</string>
+</resources>
