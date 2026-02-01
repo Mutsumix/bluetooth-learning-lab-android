@@ -168,20 +168,23 @@ private fun ScaleScreenContent(
                         )
                     }
                 }
-                Button(
+                OutlinedButton(
                     onClick = onTare,
                     enabled = isConnected,
                     modifier = Modifier
                         .weight(1f)
                         .height(56.dp),
                     shape = RoundedCornerShape(12.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = if (isConnected) AppColors.PastelMint.copy(alpha = 0.5f) else AppColors.Gray100,
+                    colors = ButtonDefaults.outlinedButtonColors(
+                        containerColor = Color.White,
                         contentColor = if (isConnected) AppColors.Emerald600 else AppColors.Gray400,
-                        disabledContainerColor = AppColors.Gray100,
+                        disabledContainerColor = Color.White,
                         disabledContentColor = AppColors.Gray400
                     ),
-                    elevation = ButtonDefaults.buttonElevation(defaultElevation = 2.dp)
+                    border = androidx.compose.foundation.BorderStroke(
+                        width = 1.dp,
+                        color = if (isConnected) AppColors.PastelMint else AppColors.Gray200
+                    )
                 ) {
                     Text(
                         text = "Tare",

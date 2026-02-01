@@ -200,24 +200,27 @@ private fun PrinterScreenContent(
                         )
                     }
                 }
-                Button(
+                OutlinedButton(
                     onClick = onPrint,
                     enabled = isConnected && text.trim().isNotEmpty() && !isPrinting,
                     modifier = Modifier
                         .weight(1f)
                         .height(56.dp),
                     shape = RoundedCornerShape(12.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = if (isConnected && text.trim().isNotEmpty())
-                            AppColors.PastelPeach.copy(alpha = 0.5f)
-                        else AppColors.Gray100,
+                    colors = ButtonDefaults.outlinedButtonColors(
+                        containerColor = Color.White,
                         contentColor = if (isConnected && text.trim().isNotEmpty())
                             AppColors.Orange600
                         else AppColors.Gray400,
-                        disabledContainerColor = AppColors.Gray100,
+                        disabledContainerColor = Color.White,
                         disabledContentColor = AppColors.Gray400
                     ),
-                    elevation = ButtonDefaults.buttonElevation(defaultElevation = 2.dp)
+                    border = androidx.compose.foundation.BorderStroke(
+                        width = 1.dp,
+                        color = if (isConnected && text.trim().isNotEmpty() && !isPrinting)
+                            AppColors.PastelPeach
+                        else AppColors.Gray200
+                    )
                 ) {
                     Row(
                         horizontalArrangement = Arrangement.spacedBy(8.dp),

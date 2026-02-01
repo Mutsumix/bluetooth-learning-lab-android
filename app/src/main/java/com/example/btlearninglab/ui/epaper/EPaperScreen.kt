@@ -214,10 +214,10 @@ private fun EPaperScreenContent(
                 shape = RoundedCornerShape(12.dp),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = if (apUrl.trim().isNotEmpty() && !isSending)
-                        AppColors.PastelLavender.copy(alpha = 0.5f)
+                        AppColors.Primary400
                     else AppColors.Gray100,
                     contentColor = if (apUrl.trim().isNotEmpty() && !isSending)
-                        AppColors.Purple600
+                        Color.White
                     else AppColors.Gray400,
                     disabledContainerColor = AppColors.Gray100,
                     disabledContentColor = AppColors.Gray400
@@ -231,7 +231,7 @@ private fun EPaperScreenContent(
                     if (isSending) {
                         CircularProgressIndicator(
                             modifier = Modifier.size(18.dp),
-                            color = AppColors.Purple600,
+                            color = Color.White,
                             strokeWidth = 2.dp
                         )
                         Text(
