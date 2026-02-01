@@ -23,6 +23,7 @@ object AppColors {
     // Additional colors
     val Gray50 = Color(0xFFFAFAFA)
     val Gray100 = Color(0xFFF5F5F5)
+    val Gray200 = Color(0xFFE5E5E5)
     val Gray300 = Color(0xFFD1D5DB)
     val Gray400 = Color(0xFF9CA3AF)
     val Gray500 = Color(0xFF6B7280)
