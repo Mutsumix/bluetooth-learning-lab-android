@@ -142,7 +142,15 @@ private fun HomeScreenContent(
                 devices.forEach { device ->
                     DeviceCard(
                         device = device,
-                        onClick = { navController.navigate(device.route) }
+                        onClick = {
+                            navController.navigate(device.route) {
+                                popUpTo(navController.graph.startDestinationId) {
+                                    saveState = true
+                                }
+                                launchSingleTop = true
+                                restoreState = true
+                            }
+                        }
                     )
                 }
             }
