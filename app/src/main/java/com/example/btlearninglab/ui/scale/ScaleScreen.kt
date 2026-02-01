@@ -1,5 +1,6 @@
 package com.example.btlearninglab.ui.scale
 
+import android.app.Application
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
@@ -12,6 +13,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -25,7 +27,11 @@ import com.example.btlearninglab.ui.components.BottomNavigationBar
 @Composable
 fun ScaleScreen(
     navController: NavController,
-    viewModel: ScaleViewModel = viewModel()
+    viewModel: ScaleViewModel = viewModel(
+        factory = ScaleViewModelFactory(
+            LocalContext.current.applicationContext as Application
+        )
+    )
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val logs by viewModel.logs.collectAsState()
