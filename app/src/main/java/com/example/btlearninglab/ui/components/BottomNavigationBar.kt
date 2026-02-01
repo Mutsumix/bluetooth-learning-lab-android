@@ -1,5 +1,6 @@
 package com.example.btlearninglab.ui.components
 
+import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -64,9 +65,12 @@ fun BottomNavigationBar(navController: NavController) {
                             .weight(1f)
                             .fillMaxHeight()
                             .clickable {
+                                Log.d("BottomNav", "Clicked: ${tab.label} -> ${tab.route}, Current: $currentRoute")
                                 if (currentRoute != tab.route) {
+                                    Log.d("BottomNav", "Navigating to: ${tab.route}")
                                     navController.navigate(tab.route) {
-                                        popUpTo(Screen.Home.route) {
+                                        // スタートデスティネーション（Home）まで戻る
+                                        popUpTo(navController.graph.startDestinationId) {
                                             saveState = true
                                         }
                                         launchSingleTop = true
