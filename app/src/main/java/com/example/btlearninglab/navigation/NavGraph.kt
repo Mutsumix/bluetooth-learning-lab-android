@@ -2,8 +2,6 @@ package com.example.btlearninglab.navigation
 
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
 import androidx.compose.runtime.Composable
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -29,44 +27,24 @@ fun NavGraph() {
     NavHost(
         navController = navController,
         startDestination = Screen.Home.route,
-        enterTransition = { fadeIn() },
-        exitTransition = { fadeOut() },
-        popEnterTransition = { fadeIn() },
-        popExitTransition = { fadeOut() }
+        enterTransition = { EnterTransition.None },
+        exitTransition = { ExitTransition.None },
+        popEnterTransition = { EnterTransition.None },
+        popExitTransition = { ExitTransition.None }
     ) {
-        composable(
-            route = Screen.Home.route,
-            enterTransition = { fadeIn() },
-            exitTransition = { fadeOut() }
-        ) {
+        composable(route = Screen.Home.route) {
             HomeScreen(navController = navController)
         }
-        composable(
-            route = Screen.Scale.route,
-            enterTransition = { fadeIn() },
-            exitTransition = { fadeOut() }
-        ) {
+        composable(route = Screen.Scale.route) {
             ScaleScreen(navController = navController)
         }
-        composable(
-            route = Screen.Printer.route,
-            enterTransition = { fadeIn() },
-            exitTransition = { fadeOut() }
-        ) {
+        composable(route = Screen.Printer.route) {
             PrinterScreen(navController = navController)
         }
-        composable(
-            route = Screen.EPaper.route,
-            enterTransition = { fadeIn() },
-            exitTransition = { fadeOut() }
-        ) {
+        composable(route = Screen.EPaper.route) {
             EPaperScreen(navController = navController)
         }
-        composable(
-            route = Screen.Log.route,
-            enterTransition = { fadeIn() },
-            exitTransition = { fadeOut() }
-        ) {
+        composable(route = Screen.Log.route) {
             LogScreen(navController = navController)
         }
     }
