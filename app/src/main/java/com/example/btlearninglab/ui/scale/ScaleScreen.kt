@@ -97,50 +97,39 @@ private fun ScaleScreenContent(
             }
 
             // Weight Display
-            Box(
+            Surface(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 24.dp, vertical = 32.dp)
+                    .border(
+                        width = 1.dp,
+                        color = AppColors.PastelMint,
+                        shape = RoundedCornerShape(24.dp)
+                    ),
+                shape = RoundedCornerShape(24.dp),
+                color = Color.White,
+                shadowElevation = 1.dp
             ) {
-                Surface(
-                    shape = RoundedCornerShape(24.dp),
-                    color = Color.Transparent,
-                    shadowElevation = 2.dp
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(32.dp),
+                    contentAlignment = Alignment.Center
                 ) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .background(
-                                brush = Brush.linearGradient(
-                                    colors = listOf(
-                                        AppColors.PastelMint.copy(alpha = 0.4f),
-                                        AppColors.Emerald100.copy(alpha = 0.3f)
-                                    )
-                                )
-                            )
-                            .border(
-                                width = 1.dp,
-                                color = AppColors.PastelMint,
-                                shape = RoundedCornerShape(24.dp)
-                            )
-                            .padding(32.dp),
-                        contentAlignment = Alignment.Center
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
-                            Text(
-                                text = String.format("%.1f", weight),
-                                fontSize = 60.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = AppColors.Emerald600
-                            )
-                            Text(
-                                text = "g",
-                                fontSize = 24.sp,
-                                color = AppColors.Gray400
-                            )
-                        }
+                        Text(
+                            text = String.format("%.1f", weight),
+                            fontSize = 60.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = AppColors.Emerald600
+                        )
+                        Text(
+                            text = "g",
+                            fontSize = 24.sp,
+                            color = AppColors.Gray400
+                        )
                     }
                 }
             }
