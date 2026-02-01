@@ -28,18 +28,28 @@ class PrinterViewModel : ViewModel() {
     }
 
     fun connect() {
+        // 既に接続中または接続済みの場合は何もしない
+        if (_uiState.value !is PrinterUiState.Disconnected) return
+
         viewModelScope.launch {
-            _uiState.value = PrinterUiState.Connecting
-            _logs.value = emptyList()
+            try {
+                _uiState.value = PrinterUiState.Connecting
+                _logs.value = emptyList()
 
-            // Simulate Bluetooth Classic connection
-            _logs.value = _logs.value + "> Pairing with SM-S210i..."
-            delay(500)
-            _logs.value = _logs.value + "> SPP Channel: 1"
-            delay(500)
-            _logs.value = _logs.value + "> Connected via RFCOMM"
+                // Simulate Bluetooth Classic connection
+                _logs.value = _logs.value + "> Pairing with SM-S210i..."
+                delay(500)
+                _logs.value = _logs.value + "> SPP Channel: 1"
+                delay(500)
+                _logs.value = _logs.value + "> Connected via RFCOMM"
 
-            _uiState.value = PrinterUiState.Connected(printerName = "SM-S210i")
+                _uiState.value = PrinterUiState.Connected(printerName = "SM-S210i")
+            } catch (e: Exception) {
+                _logs.value = _logs.value + "> Error: ${e.message}"
+                _uiState.value = PrinterUiState.Error(message = e.message ?: "Unknown error")
+                delay(2000)
+                _uiState.value = PrinterUiState.Disconnected
+            }
         }
     }
 
@@ -51,8 +61,13 @@ class PrinterViewModel : ViewModel() {
 
     fun print() {
         val currentState = _uiState.value
-        if (currentState is PrinterUiState.Connected && _text.value.trim().isNotEmpty()) {
-            viewModelScope.launch {
+        if (currentState !is PrinterUiState.Connected || _text.value.trim().isEmpty()) return
+
+        // 既に印刷中の場合は何もしない
+        if (_uiState.value is PrinterUiState.Printing) return
+
+        viewModelScope.launch {
+            try {
                 _uiState.value = PrinterUiState.Printing
 
                 _logs.value = _logs.value + "> Sending ${_text.value.length + 10} bytes..."
@@ -61,6 +76,11 @@ class PrinterViewModel : ViewModel() {
                 _showCommand.value = true
 
                 _uiState.value = currentState
+            } catch (e: Exception) {
+                _logs.value = _logs.value + "> Print Error: ${e.message}"
+                _uiState.value = PrinterUiState.Error(message = e.message ?: "Unknown error")
+                delay(2000)
+                _uiState.value = PrinterUiState.Disconnected
             }
         }
     }

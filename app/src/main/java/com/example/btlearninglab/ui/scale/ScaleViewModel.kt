@@ -16,25 +16,35 @@ class ScaleViewModel : ViewModel() {
     val logs: StateFlow<List<String>> = _logs.asStateFlow()
 
     fun connect() {
+        // 既に接続中または接続済みの場合は何もしない
+        if (_uiState.value !is ScaleUiState.Disconnected) return
+
         viewModelScope.launch {
-            _uiState.value = ScaleUiState.Connecting
-            _logs.value = emptyList()
+            try {
+                _uiState.value = ScaleUiState.Connecting
+                _logs.value = emptyList()
 
-            // Simulate BLE connection
-            _logs.value = _logs.value + "> Scanning for \"Decent Scale\""
-            delay(500)
-            _logs.value = _logs.value + "> Found: XX:XX:XX:XX:XX:XX"
-            delay(500)
-            _logs.value = _logs.value + "> Connecting..."
-            delay(500)
-            _logs.value = _logs.value + "> Subscribing to FFF4..."
-            delay(500)
-            _logs.value = _logs.value + "> Receiving notifications"
+                // Simulate BLE connection
+                _logs.value = _logs.value + "> Scanning for \"Decent Scale\""
+                delay(500)
+                _logs.value = _logs.value + "> Found: XX:XX:XX:XX:XX:XX"
+                delay(500)
+                _logs.value = _logs.value + "> Connecting..."
+                delay(500)
+                _logs.value = _logs.value + "> Subscribing to FFF4..."
+                delay(500)
+                _logs.value = _logs.value + "> Receiving notifications"
 
-            _uiState.value = ScaleUiState.Connected(
-                weight = 125.4f,
-                rawData = "03 CE 04 E6 00 00 2B"
-            )
+                _uiState.value = ScaleUiState.Connected(
+                    weight = 125.4f,
+                    rawData = "03 CE 04 E6 00 00 2B"
+                )
+            } catch (e: Exception) {
+                _logs.value = _logs.value + "> Error: ${e.message}"
+                _uiState.value = ScaleUiState.Error(message = e.message ?: "Unknown error")
+                delay(2000)
+                _uiState.value = ScaleUiState.Disconnected
+            }
         }
     }
 
