@@ -57,7 +57,7 @@ class StarXpandPrinterClient(private val context: Context) {
     }
 
     private suspend fun discoverPrinter(): StarPrinter? = suspendCancellableCoroutine { continuation ->
-        val manager = StarDeviceDiscoveryManager(
+        val manager = StarDeviceDiscoveryManagerFactory.create(
             listOf(InterfaceType.Bluetooth),
             context
         )
