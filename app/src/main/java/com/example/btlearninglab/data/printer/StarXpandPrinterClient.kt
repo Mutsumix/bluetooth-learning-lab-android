@@ -95,37 +95,6 @@ class StarXpandPrinterClient(private val context: Context) {
         manager.startDiscovery()
     }
 
-    private suspend fun connectToPrinter(settings: StarConnectionSettings) = withContext(Dispatchers.IO) {
-        try {
-            _connectionState.value = PrinterConnectionState.Connecting
-            addLog("> Connecting to printer...")
-            addLog("> Interface: ${settings.interfaceType}")
-            addLog("> Identifier: ${settings.identifier}")
-
-            addLog("> Creating StarPrinter instance...")
-            val printer = StarPrinter(settings, context)
-            starPrinter = printer
-
-            addLog("> Calling openAsync()...")
-            printer.openAsync().await()
-
-            addLog("> Connected successfully")
-            _connectionState.value = PrinterConnectionState.Connected(TARGET_DEVICE_NAME)
-
-        } catch (e: StarIO10Exception) {
-            addLog("> StarIO10Exception in connectToPrinter: ${e.javaClass.simpleName}")
-            addLog("> Error code: ${e.errorCode}")
-            addLog("> Message: ${e.message}")
-            addLog("> Stack: ${e.stackTraceToString().take(300)}")
-            handleStarIOException(e)
-        } catch (e: Exception) {
-            addLog("> Exception in connectToPrinter: ${e.javaClass.simpleName}")
-            addLog("> Message: ${e.message}")
-            addLog("> Stack: ${e.stackTraceToString().take(300)}")
-            _connectionState.value = PrinterConnectionState.Error(e.message ?: "Connection failed")
-        }
-    }
-
     suspend fun print(text: String) = withContext(Dispatchers.IO) {
         val settings = printerSettings
         if (settings == null) {
