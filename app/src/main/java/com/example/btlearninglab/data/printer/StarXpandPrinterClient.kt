@@ -124,24 +124,41 @@ class StarXpandPrinterClient(private val context: Context) {
         try {
             _connectionState.value = PrinterConnectionState.Printing
             addLog("> Building print job...")
+            addLog("> Text to print: \"$text\"")
 
             // StarXpandCommandBuilder でコマンド生成
+            addLog("> Creating StarXpandCommandBuilder...")
             val builder = StarXpandCommandBuilder()
-            builder.addDocument(
-                DocumentBuilder()
-                    .addPrinter(
-                        PrinterBuilder()
-                            .styleInternationalCharacter(InternationalCharacterType.Japan)
-                            .actionPrintText("$text\n")
-                            .actionCut(CutType.Partial)
-                    )
-            )
 
+            addLog("> Creating DocumentBuilder...")
+            val document = DocumentBuilder()
+
+            addLog("> Creating PrinterBuilder...")
+            val printerBuilder = PrinterBuilder()
+
+            addLog("> Setting international character...")
+            printerBuilder.styleInternationalCharacter(InternationalCharacterType.Japan)
+
+            addLog("> Adding print text action...")
+            printerBuilder.actionPrintText("$text\n")
+
+            addLog("> Adding cut action...")
+            printerBuilder.actionCut(CutType.Partial)
+
+            addLog("> Adding printer to document...")
+            document.addPrinter(printerBuilder)
+
+            addLog("> Adding document to builder...")
+            builder.addDocument(document)
+
+            addLog("> Getting commands...")
             val commands = builder.getCommands()
+            addLog("> Commands created successfully")
 
             addLog("> Printing: \"$text\"")
 
             // 印刷実行
+            addLog("> Calling printAsync()...")
             printer.printAsync(commands).await()
 
             addLog("> Print completed")
@@ -150,10 +167,13 @@ class StarXpandPrinterClient(private val context: Context) {
             _connectionState.value = PrinterConnectionState.Connected(TARGET_DEVICE_NAME)
 
         } catch (e: StarIO10Exception) {
+            addLog("> StarIO10Exception: ${e.javaClass.simpleName} - ${e.message}")
+            addLog("> Stack trace: ${e.stackTraceToString().take(500)}")
             handleStarIOException(e)
             _connectionState.value = PrinterConnectionState.Connected(TARGET_DEVICE_NAME)
         } catch (e: Exception) {
-            addLog("> Print error: ${e.message}")
+            addLog("> Exception: ${e.javaClass.simpleName} - ${e.message}")
+            addLog("> Stack trace: ${e.stackTraceToString().take(500)}")
             _connectionState.value = PrinterConnectionState.Error(e.message ?: "Print failed")
         }
     }
