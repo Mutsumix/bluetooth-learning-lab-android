@@ -158,11 +158,16 @@ class StarXpandPrinterClient(private val context: Context) {
         }
     }
 
-    fun disconnect() {
+    suspend fun disconnect() = withContext(Dispatchers.IO) {
         addLog("> Disconnecting...")
 
-        // StarPrinterの参照をクリア（リソースはガベージコレクションに任せる）
-        starPrinter = null
+        try {
+            starPrinter?.closeAsync()?.await()
+        } catch (e: Exception) {
+            addLog("> Error closing printer: ${e.message}")
+        } finally {
+            starPrinter = null
+        }
 
         discoveryManager?.stopDiscovery()
         discoveryManager = null

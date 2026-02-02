@@ -52,8 +52,10 @@ class PrinterViewModel(
     }
 
     fun disconnect() {
-        printerClient.disconnect()
-        _showCommand.value = false
+        viewModelScope.launch {
+            printerClient.disconnect()
+            _showCommand.value = false
+        }
     }
 
     fun print() {
@@ -114,6 +116,8 @@ class PrinterViewModel(
 
     override fun onCleared() {
         super.onCleared()
-        printerClient.disconnect()
+        viewModelScope.launch {
+            printerClient.disconnect()
+        }
     }
 }

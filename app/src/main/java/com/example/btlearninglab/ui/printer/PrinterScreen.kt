@@ -346,7 +346,7 @@ private fun PrinterScreenContent(
                             .fillMaxWidth()
                             .background(AppColors.Gray50.copy(alpha = 0.5f))
                             .padding(20.dp)
-                            .heightIn(min = 100.dp, max = 200.dp),
+                            .heightIn(min = 100.dp, max = 300.dp),
                         contentAlignment = if (logs.isEmpty()) Alignment.Center else Alignment.TopStart
                     ) {
                         if (logs.isEmpty()) {
@@ -358,6 +358,7 @@ private fun PrinterScreenContent(
                             )
                         } else {
                             Column(
+                                modifier = Modifier.verticalScroll(rememberScrollState()),
                                 verticalArrangement = Arrangement.spacedBy(6.dp)
                             ) {
                                 logs.forEach { log ->
