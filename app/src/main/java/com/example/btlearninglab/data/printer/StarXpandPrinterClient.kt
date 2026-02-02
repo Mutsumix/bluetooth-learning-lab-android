@@ -140,7 +140,6 @@ class StarXpandPrinterClient(private val context: Context) {
             val commands = builder.getCommands()
 
             addLog("> Printing: \"$text\"")
-            addLog("> Commands size: ${commands.size} bytes")
 
             // 印刷実行
             printer.printAsync(commands).await()
