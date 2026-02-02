@@ -9,11 +9,14 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -65,6 +68,7 @@ private fun PrinterScreenContent(
 ) {
     val isConnected = uiState is PrinterUiState.Connected
     val isPrinting = uiState is PrinterUiState.Printing
+    val focusManager = LocalFocusManager.current
 
     val sentCommand = listOf(
         "1B 40          (Initialize)",
@@ -81,6 +85,11 @@ private fun PrinterScreenContent(
                 brush = Brush.verticalGradient(
                     colors = listOf(AppColors.Primary50, Color.White)
                 )
+            )
+            .clickable(
+                onClick = { focusManager.clearFocus() },
+                indication = null,
+                interactionSource = remember { MutableInteractionSource() }
             )
     ) {
         Column(
