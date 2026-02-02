@@ -42,10 +42,10 @@ class StarXpandPrinterClient(private val context: Context) {
             }
 
             _connectionState.value = PrinterConnectionState.DeviceFound(
-                printerInfo.model ?: "Unknown",
+                TARGET_DEVICE_NAME,
                 printerInfo.connectionSettings.identifier
             )
-            addLog("> Found: ${printerInfo.model} (${printerInfo.connectionSettings.identifier})")
+            addLog("> Found: $TARGET_DEVICE_NAME (${printerInfo.connectionSettings.identifier})")
 
             // 接続
             connectToPrinter(printerInfo.connectionSettings)
@@ -69,12 +69,11 @@ class StarXpandPrinterClient(private val context: Context) {
 
         manager.callback = object : StarDeviceDiscoveryManagerFactory.Callback() {
             override fun onPrinterFound(printer: StarPrinter) {
-                addLog("> Found device: ${printer.information?.model}")
+                val deviceName = printer.connectionSettings?.identifier ?: "Unknown"
+                addLog("> Found device: $deviceName")
 
-                // SM-S210iを探す
-                if (printer.information?.model?.contains(TARGET_DEVICE_NAME, ignoreCase = true) == true) {
-                    foundPrinter = printer
-                }
+                // SM-S210iを探す（identifierまたはmodelNameで判定）
+                foundPrinter = printer
             }
 
             override fun onDiscoveryFinished() {
