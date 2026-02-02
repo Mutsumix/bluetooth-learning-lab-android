@@ -29,10 +29,12 @@ class StarXpandPrinterClient(private val context: Context) {
 
     suspend fun discoverAndConnect() = withContext(Dispatchers.IO) {
         try {
+            addLog("> === Starting connection process ===")
             _connectionState.value = PrinterConnectionState.Discovering
             addLog("> Searching for printers...")
 
             // プリンター検索
+            addLog("> Calling discoverPrinter()...")
             val printerInfo = discoverPrinter()
 
             if (printerInfo == null) {
@@ -48,11 +50,14 @@ class StarXpandPrinterClient(private val context: Context) {
             addLog("> Found: $TARGET_DEVICE_NAME (${printerInfo.connectionSettings.identifier})")
 
             // 接続
+            addLog("> Attempting to connect...")
             connectToPrinter(printerInfo.connectionSettings)
 
         } catch (e: Exception) {
+            addLog("> Exception in discoverAndConnect: ${e.javaClass.simpleName}")
+            addLog("> Message: ${e.message}")
+            addLog("> Stack: ${e.stackTraceToString().take(300)}")
             _connectionState.value = PrinterConnectionState.Error(e.message ?: "Unknown error")
-            addLog("> Error: ${e.message}")
         }
     }
 
@@ -98,19 +103,27 @@ class StarXpandPrinterClient(private val context: Context) {
             addLog("> Interface: ${settings.interfaceType}")
             addLog("> Identifier: ${settings.identifier}")
 
+            addLog("> Creating StarPrinter instance...")
             val printer = StarPrinter(settings, context)
             starPrinter = printer
 
+            addLog("> Calling openAsync()...")
             printer.openAsync().await()
 
-            addLog("> Connected")
+            addLog("> Connected successfully")
             _connectionState.value = PrinterConnectionState.Connected(TARGET_DEVICE_NAME)
 
         } catch (e: StarIO10Exception) {
+            addLog("> StarIO10Exception in connectToPrinter: ${e.javaClass.simpleName}")
+            addLog("> Error code: ${e.errorCode}")
+            addLog("> Message: ${e.message}")
+            addLog("> Stack: ${e.stackTraceToString().take(300)}")
             handleStarIOException(e)
         } catch (e: Exception) {
+            addLog("> Exception in connectToPrinter: ${e.javaClass.simpleName}")
+            addLog("> Message: ${e.message}")
+            addLog("> Stack: ${e.stackTraceToString().take(300)}")
             _connectionState.value = PrinterConnectionState.Error(e.message ?: "Connection failed")
-            addLog("> Connection failed: ${e.message}")
         }
     }
 
