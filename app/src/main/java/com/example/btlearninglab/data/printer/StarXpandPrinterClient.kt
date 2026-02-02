@@ -150,30 +150,16 @@ class StarXpandPrinterClient(private val context: Context) {
             addLog("> Building print job...")
             addLog("> Text to print: \"$text\"")
 
-            // StarXpandCommandBuilder でコマンド生成
-            addLog("> Creating StarXpandCommandBuilder...")
+            // StarXpandCommandBuilder でコマンド生成（最小構成でテスト）
+            addLog("> Creating simple print command...")
             val builder = StarXpandCommandBuilder()
-
-            addLog("> Creating DocumentBuilder...")
-            val document = DocumentBuilder()
-
-            addLog("> Creating PrinterBuilder...")
-            val printerBuilder = PrinterBuilder()
-
-            addLog("> Setting international character...")
-            printerBuilder.styleInternationalCharacter(InternationalCharacterType.Japan)
-
-            addLog("> Adding print text action...")
-            printerBuilder.actionPrintText("$text\n")
-
-            addLog("> Adding cut action...")
-            printerBuilder.actionCut(CutType.Partial)
-
-            addLog("> Adding printer to document...")
-            document.addPrinter(printerBuilder)
-
-            addLog("> Adding document to builder...")
-            builder.addDocument(document)
+            builder.addDocument(
+                DocumentBuilder()
+                    .addPrinter(
+                        PrinterBuilder()
+                            .actionPrintText("$text\n")
+                    )
+            )
 
             addLog("> Getting commands...")
             val commands = builder.getCommands()
