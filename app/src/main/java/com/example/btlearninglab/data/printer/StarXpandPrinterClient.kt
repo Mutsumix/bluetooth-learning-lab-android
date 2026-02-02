@@ -126,7 +126,7 @@ class StarXpandPrinterClient(private val context: Context) {
             addLog("> Building print job...")
 
             // StarXpandCommandBuilder でコマンド生成
-            val builder = StarXpandCommand.StarXpandCommandBuilder()
+            val builder = StarXpandCommandBuilder()
             builder.addDocument(
                 DocumentBuilder()
                     .addPrinter(
