@@ -65,7 +65,9 @@ class PrinterViewModel(
         viewModelScope.launch {
             try {
                 _uiState.value = PrinterUiState.Printing
-                printerClient.print(_text.value)
+                val textToPrint = _text.value
+                _logs.value = _logs.value + "> [ViewModel] Printing text: \"$textToPrint\""
+                printerClient.print(textToPrint)
                 _showCommand.value = true
             } catch (e: Exception) {
                 _logs.value = _logs.value + "> Print Error: ${e.message}"

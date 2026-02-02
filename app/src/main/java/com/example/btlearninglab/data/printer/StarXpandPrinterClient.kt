@@ -1,6 +1,7 @@
 package com.example.btlearninglab.data.printer
 
 import android.content.Context
+import android.util.Log
 import com.starmicronics.stario10.*
 import com.starmicronics.stario10.starxpandcommand.*
 import com.starmicronics.stario10.starxpandcommand.DocumentBuilder
@@ -9,6 +10,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.future.await
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
 import kotlin.coroutines.resume
@@ -108,19 +110,19 @@ class StarXpandPrinterClient(private val context: Context) {
         try {
             _connectionState.value = PrinterConnectionState.Printing
             addLog("> Building print job...")
+            addLog("> Text to print: \"$text\"")
 
-            // StarXpandCommandBuilder でコマンド生成
-            val builder = StarXpandCommandBuilder()
-            builder.addDocument(
-                DocumentBuilder()
-                    .addPrinter(
-                        PrinterBuilder()
-                            .actionPrintText("$text\n")
-                    )
-            )
-
-            val commands = builder.getCommands()
-            addLog("> Commands created")
+            // StarXpandCommandBuilder でコマンド生成（公式推奨パターン）
+            addLog("> Creating print command with method chaining...")
+            val commands = StarXpandCommandBuilder().apply {
+                addDocument(DocumentBuilder().apply {
+                    addPrinter(PrinterBuilder().apply {
+                        actionPrintText("$text\n")
+                    })
+                })
+            }.getCommands()
+            addLog("> Commands created successfully")
+            addLog("> Command preview: ${commands.take(100)}")
 
             // open→print→closeのサイクル
             addLog("> Opening printer...")
@@ -134,12 +136,38 @@ class StarXpandPrinterClient(private val context: Context) {
             // Connected状態に戻る
             _connectionState.value = PrinterConnectionState.Connected(TARGET_DEVICE_NAME)
 
+        } catch (e: StarIO10UnprintableException) {
+            addLog("> !!! StarIO10UnprintableException caught !!!")
+            addLog("> Error code: ${e.errorCode}")
+            addLog("> Message: ${e.message}")
+
+            when (e.errorCode.name) {
+                "DeviceHasError" -> {
+                    addLog("> Printer error: No paper or cover open")
+                    _connectionState.value = PrinterConnectionState.Error("用紙切れまたはカバー開放")
+                }
+                "PrinterHoldingPaper" -> {
+                    addLog("> Printer error: Remove previous paper")
+                    _connectionState.value = PrinterConnectionState.Error("前の用紙を取り除いてください")
+                }
+                else -> {
+                    addLog("> Unprintable error: ${e.errorCode} - ${e.message}")
+                    handleStarIOException(e)
+                    _connectionState.value = PrinterConnectionState.Connected(TARGET_DEVICE_NAME)
+                }
+            }
         } catch (e: StarIO10Exception) {
-            addLog("> Error: ${e.message}")
+            addLog("> !!! StarIO10Exception caught !!!")
+            addLog("> Error code: ${e.errorCode}")
+            addLog("> Message: ${e.message}")
+            addLog("> Stack trace: ${e.stackTraceToString().take(300)}")
             handleStarIOException(e)
             _connectionState.value = PrinterConnectionState.Connected(TARGET_DEVICE_NAME)
         } catch (e: Exception) {
-            addLog("> Error: ${e.message}")
+            addLog("> !!! Exception caught !!!")
+            addLog("> Class: ${e.javaClass.name}")
+            addLog("> Message: ${e.message}")
+            addLog("> Stack trace: ${e.stackTraceToString().take(300)}")
             _connectionState.value = PrinterConnectionState.Error(e.message ?: "Print failed")
         } finally {
             // 必ずクローズ
@@ -176,6 +204,7 @@ class StarXpandPrinterClient(private val context: Context) {
     }
 
     private fun addLog(message: String) {
+        Log.d("StarXpandPrinter", message)
         _logs.value = _logs.value + message
     }
 }

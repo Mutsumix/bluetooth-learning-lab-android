@@ -232,19 +232,12 @@ private fun PrinterScreenContent(
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        if (isPrinting) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(18.dp),
-                                color = AppColors.Orange600,
-                                strokeWidth = 2.dp
-                            )
-                        } else {
-                            Icon(
-                                painter = painterResource(id = R.drawable.ic_printer),
-                                contentDescription = "Print",
-                                modifier = Modifier.size(20.dp)
-                            )
-                        }
+                        // CircularProgressIndicatorを削除 - Composeバージョン不整合でクラッシュするため
+                        Icon(
+                            painter = painterResource(id = R.drawable.ic_printer),
+                            contentDescription = "Print",
+                            modifier = Modifier.size(20.dp)
+                        )
                         Text(
                             text = "印刷",
                             fontWeight = FontWeight.SemiBold,
