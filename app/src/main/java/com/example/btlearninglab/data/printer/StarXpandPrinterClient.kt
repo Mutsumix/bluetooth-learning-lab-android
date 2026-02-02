@@ -132,7 +132,6 @@ class StarXpandPrinterClient(private val context: Context) {
                     .addPrinter(
                         PrinterBuilder()
                             .styleInternationalCharacter(InternationalCharacterType.Japan)
-                            .styleCJKCharacterPriority(listOf(CJKCharacterType.Japanese))
                             .actionPrintText("$text\n")
                             .actionCut(CutType.Partial)
                     )
