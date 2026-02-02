@@ -29,6 +29,17 @@ class StarXpandPrinterClient(private val context: Context) {
 
     suspend fun discoverAndConnect() = withContext(Dispatchers.IO) {
         try {
+            // 既存の接続をクリーンアップ
+            if (starPrinter != null) {
+                addLog("> Cleaning up existing connection...")
+                try {
+                    starPrinter?.closeAsync()?.await()
+                } catch (e: Exception) {
+                    addLog("> Cleanup error (ignored): ${e.message}")
+                }
+                starPrinter = null
+            }
+
             addLog("> === Starting connection process ===")
             _connectionState.value = PrinterConnectionState.Discovering
             addLog("> Searching for printers...")
