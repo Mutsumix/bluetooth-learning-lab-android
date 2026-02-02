@@ -14,7 +14,7 @@ import kotlinx.coroutines.withContext
 import kotlin.coroutines.resume
 
 class StarXpandPrinterClient(private val context: Context) {
-    private var starPrinter: StarPrinter? = null
+    private var printerSettings: StarConnectionSettings? = null
     private var discoveryManager: StarDeviceDiscoveryManager? = null
 
     private val _connectionState = MutableStateFlow<PrinterConnectionState>(PrinterConnectionState.Idle)
@@ -29,23 +29,10 @@ class StarXpandPrinterClient(private val context: Context) {
 
     suspend fun discoverAndConnect() = withContext(Dispatchers.IO) {
         try {
-            // 既存の接続をクリーンアップ
-            if (starPrinter != null) {
-                addLog("> Cleaning up existing connection...")
-                try {
-                    starPrinter?.closeAsync()?.await()
-                } catch (e: Exception) {
-                    addLog("> Cleanup error (ignored): ${e.message}")
-                }
-                starPrinter = null
-            }
-
-            addLog("> === Starting connection process ===")
-            _connectionState.value = PrinterConnectionState.Discovering
             addLog("> Searching for printers...")
+            _connectionState.value = PrinterConnectionState.Discovering
 
             // プリンター検索
-            addLog("> Calling discoverPrinter()...")
             val printerInfo = discoverPrinter()
 
             if (printerInfo == null) {
@@ -54,20 +41,21 @@ class StarXpandPrinterClient(private val context: Context) {
                 return@withContext
             }
 
+            // 接続設定を保存
+            printerSettings = printerInfo.connectionSettings
+
             _connectionState.value = PrinterConnectionState.DeviceFound(
                 TARGET_DEVICE_NAME,
                 printerInfo.connectionSettings.identifier
             )
             addLog("> Found: $TARGET_DEVICE_NAME (${printerInfo.connectionSettings.identifier})")
 
-            // 接続
-            addLog("> Attempting to connect...")
-            connectToPrinter(printerInfo.connectionSettings)
+            // 接続済みとしてマーク（実際の接続は印刷時に行う）
+            _connectionState.value = PrinterConnectionState.Connected(TARGET_DEVICE_NAME)
+            addLog("> Ready to print")
 
         } catch (e: Exception) {
-            addLog("> Exception in discoverAndConnect: ${e.javaClass.simpleName}")
-            addLog("> Message: ${e.message}")
-            addLog("> Stack: ${e.stackTraceToString().take(300)}")
+            addLog("> Exception: ${e.javaClass.simpleName} - ${e.message}")
             _connectionState.value = PrinterConnectionState.Error(e.message ?: "Unknown error")
         }
     }
@@ -139,19 +127,20 @@ class StarXpandPrinterClient(private val context: Context) {
     }
 
     suspend fun print(text: String) = withContext(Dispatchers.IO) {
-        val printer = starPrinter
-        if (printer == null) {
+        val settings = printerSettings
+        if (settings == null) {
             addLog("> Error: Not connected")
             return@withContext
         }
 
+        // 印刷のたびに新しいStarPrinterインスタンスを作成（React Nativeパターン）
+        val printer = StarPrinter(settings, context)
+
         try {
             _connectionState.value = PrinterConnectionState.Printing
             addLog("> Building print job...")
-            addLog("> Text to print: \"$text\"")
 
-            // StarXpandCommandBuilder でコマンド生成（最小構成でテスト）
-            addLog("> Creating simple print command...")
+            // StarXpandCommandBuilder でコマンド生成
             val builder = StarXpandCommandBuilder()
             builder.addDocument(
                 DocumentBuilder()
@@ -161,14 +150,14 @@ class StarXpandPrinterClient(private val context: Context) {
                     )
             )
 
-            addLog("> Getting commands...")
             val commands = builder.getCommands()
-            addLog("> Commands created successfully")
+            addLog("> Commands created")
 
-            addLog("> Printing: \"$text\"")
+            // open→print→closeのサイクル
+            addLog("> Opening printer...")
+            printer.openAsync().await()
 
-            // 印刷実行
-            addLog("> Calling printAsync()...")
+            addLog("> Printing...")
             printer.printAsync(commands).await()
 
             addLog("> Print completed")
@@ -177,28 +166,27 @@ class StarXpandPrinterClient(private val context: Context) {
             _connectionState.value = PrinterConnectionState.Connected(TARGET_DEVICE_NAME)
 
         } catch (e: StarIO10Exception) {
-            addLog("> StarIO10Exception: ${e.javaClass.simpleName} - ${e.message}")
-            addLog("> Stack trace: ${e.stackTraceToString().take(500)}")
+            addLog("> Error: ${e.message}")
             handleStarIOException(e)
             _connectionState.value = PrinterConnectionState.Connected(TARGET_DEVICE_NAME)
         } catch (e: Exception) {
-            addLog("> Exception: ${e.javaClass.simpleName} - ${e.message}")
-            addLog("> Stack trace: ${e.stackTraceToString().take(500)}")
+            addLog("> Error: ${e.message}")
             _connectionState.value = PrinterConnectionState.Error(e.message ?: "Print failed")
+        } finally {
+            // 必ずクローズ
+            try {
+                addLog("> Closing printer...")
+                printer.closeAsync().await()
+            } catch (e: Exception) {
+                addLog("> Close error (ignored): ${e.message}")
+            }
         }
     }
 
     suspend fun disconnect() = withContext(Dispatchers.IO) {
         addLog("> Disconnecting...")
 
-        try {
-            starPrinter?.closeAsync()?.await()
-        } catch (e: Exception) {
-            addLog("> Error closing printer: ${e.message}")
-        } finally {
-            starPrinter = null
-        }
-
+        printerSettings = null
         discoveryManager?.stopDiscovery()
         discoveryManager = null
 
