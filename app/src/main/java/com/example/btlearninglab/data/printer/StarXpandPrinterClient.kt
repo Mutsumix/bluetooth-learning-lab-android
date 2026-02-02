@@ -67,7 +67,7 @@ class StarXpandPrinterClient(private val context: Context) {
 
         manager.discoveryTime = 10000 // 10秒
 
-        manager.callback = object : StarDeviceDiscoveryManagerFactory.Callback() {
+        manager.callback = object : StarDeviceDiscoveryManager.Callback {
             override fun onPrinterFound(printer: StarPrinter) {
                 val deviceName = printer.connectionSettings?.identifier ?: "Unknown"
                 addLog("> Found device: $deviceName")
