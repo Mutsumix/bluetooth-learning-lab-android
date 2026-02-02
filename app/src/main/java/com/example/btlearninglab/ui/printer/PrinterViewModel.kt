@@ -2,13 +2,17 @@ package com.example.btlearninglab.ui.printer
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.btlearninglab.data.printer.PrinterConnectionState
+import com.example.btlearninglab.data.printer.StarXpandPrinterClient
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
-class PrinterViewModel : ViewModel() {
+class PrinterViewModel(
+    private val printerClient: StarXpandPrinterClient
+) : ViewModel() {
     private val _uiState = MutableStateFlow<PrinterUiState>(PrinterUiState.Disconnected)
     val uiState: StateFlow<PrinterUiState> = _uiState.asStateFlow()
 
@@ -21,6 +25,11 @@ class PrinterViewModel : ViewModel() {
     private val _showCommand = MutableStateFlow(false)
     val showCommand: StateFlow<Boolean> = _showCommand.asStateFlow()
 
+    init {
+        observePrinterConnectionState()
+        observePrinterLogs()
+    }
+
     fun updateText(newText: String) {
         if (newText.length <= 200) {
             _text.value = newText
@@ -28,34 +37,22 @@ class PrinterViewModel : ViewModel() {
     }
 
     fun connect() {
-        // 既に接続中または接続済みの場合は何もしない
         if (_uiState.value !is PrinterUiState.Disconnected) return
 
         viewModelScope.launch {
             try {
                 _uiState.value = PrinterUiState.Connecting
                 _logs.value = emptyList()
-
-                // Simulate Bluetooth Classic connection
-                _logs.value = _logs.value + "> Pairing with SM-S210i..."
-                delay(500)
-                _logs.value = _logs.value + "> SPP Channel: 1"
-                delay(500)
-                _logs.value = _logs.value + "> Connected via RFCOMM"
-
-                _uiState.value = PrinterUiState.Connected(printerName = "SM-S210i")
+                printerClient.discoverAndConnect()
             } catch (e: Exception) {
                 _logs.value = _logs.value + "> Error: ${e.message}"
                 _uiState.value = PrinterUiState.Error(message = e.message ?: "Unknown error")
-                delay(2000)
-                _uiState.value = PrinterUiState.Disconnected
             }
         }
     }
 
     fun disconnect() {
-        _logs.value = _logs.value + "> Disconnected"
-        _uiState.value = PrinterUiState.Disconnected
+        printerClient.disconnect()
         _showCommand.value = false
     }
 
@@ -63,25 +60,60 @@ class PrinterViewModel : ViewModel() {
         val currentState = _uiState.value
         if (currentState !is PrinterUiState.Connected || _text.value.trim().isEmpty()) return
 
-        // 既に印刷中の場合は何もしない
-        if (_uiState.value is PrinterUiState.Printing) return
-
         viewModelScope.launch {
             try {
                 _uiState.value = PrinterUiState.Printing
-
-                _logs.value = _logs.value + "> Sending ${_text.value.length + 10} bytes..."
-                delay(1000)
-                _logs.value = _logs.value + "> Done!"
+                printerClient.print(_text.value)
                 _showCommand.value = true
-
-                _uiState.value = currentState
             } catch (e: Exception) {
                 _logs.value = _logs.value + "> Print Error: ${e.message}"
                 _uiState.value = PrinterUiState.Error(message = e.message ?: "Unknown error")
-                delay(2000)
-                _uiState.value = PrinterUiState.Disconnected
             }
         }
+    }
+
+    private fun observePrinterConnectionState() {
+        viewModelScope.launch {
+            printerClient.connectionState.collect { state ->
+                when (state) {
+                    is PrinterConnectionState.Idle -> {
+                        _uiState.value = PrinterUiState.Disconnected
+                    }
+                    is PrinterConnectionState.Discovering,
+                    is PrinterConnectionState.DeviceFound,
+                    is PrinterConnectionState.Connecting -> {
+                        _uiState.value = PrinterUiState.Connecting
+                    }
+                    is PrinterConnectionState.Connected -> {
+                        _uiState.value = PrinterUiState.Connected(printerName = state.printerName)
+                    }
+                    is PrinterConnectionState.Printing -> {
+                        _uiState.value = PrinterUiState.Printing
+                    }
+                    is PrinterConnectionState.Error -> {
+                        _uiState.value = PrinterUiState.Error(state.message)
+                        viewModelScope.launch {
+                            delay(2000)
+                            if (_uiState.value is PrinterUiState.Error) {
+                                _uiState.value = PrinterUiState.Disconnected
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private fun observePrinterLogs() {
+        viewModelScope.launch {
+            printerClient.logs.collect { logs ->
+                _logs.value = logs
+            }
+        }
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        printerClient.disconnect()
     }
 }
