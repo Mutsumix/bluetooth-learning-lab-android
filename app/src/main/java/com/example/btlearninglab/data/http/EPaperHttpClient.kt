@@ -33,18 +33,16 @@ class EPaperHttpClient {
      * @param apIp IP address of the AP (without http://)
      * @param macAddress MAC address of the E-Paper tag
      * @param imageData JPEG image data as ByteArray
-     * @param dither Dithering setting (0 = disabled, 1 = enabled)
      * @return Result containing response text on success, or exception on failure
      */
     suspend fun uploadImage(
         apIp: String,
         macAddress: String,
-        imageData: ByteArray,
-        dither: Int = 0
+        imageData: ByteArray
     ): Result<String> = withContext(Dispatchers.IO) {
         try {
             addLog("> Connecting to AP...")
-            addLog("> DEBUG: apIp='$apIp', mac='$macAddress' (len=${macAddress.length}), dither=$dither, imageSize=${imageData.size}")
+            addLog("> DEBUG: apIp='$apIp', mac='$macAddress' (len=${macAddress.length}), imageSize=${imageData.size}")
             val url = "http://$apIp/imgupload"
             addLog("> URL: $url")
 
@@ -53,7 +51,7 @@ class EPaperHttpClient {
             val requestBody = MultipartBody.Builder()
                 .setType(MultipartBody.FORM)
                 .addFormDataPart("mac", macAddress)
-                .addFormDataPart("dither", dither.toString())
+                .addFormDataPart("dither", "0")
                 .addFormDataPart(
                     "file",
                     "image.jpg",
@@ -65,7 +63,6 @@ class EPaperHttpClient {
             addLog("> Content-Type: multipart/form-data")
             addLog("> file: image.jpg (${imageData.size} bytes)")
             addLog("> mac: '$macAddress'")
-            addLog("> dither: '$dither'")
 
             val request = Request.Builder()
                 .url(url)

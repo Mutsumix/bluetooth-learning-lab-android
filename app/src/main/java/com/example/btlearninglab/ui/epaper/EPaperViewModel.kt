@@ -44,9 +44,6 @@ class EPaperViewModel(
     private val _macAddress = MutableStateFlow("")
     val macAddress: StateFlow<String> = _macAddress.asStateFlow()
 
-    private val _ditherEnabled = MutableStateFlow(false)
-    val ditherEnabled: StateFlow<Boolean> = _ditherEnabled.asStateFlow()
-
     private val _currentWeight = MutableStateFlow(0.0)
     val currentWeight: StateFlow<Double> = _currentWeight.asStateFlow()
 
@@ -72,10 +69,6 @@ class EPaperViewModel(
 
     fun updateMacAddress(newMac: String) {
         _macAddress.value = newMac
-    }
-
-    fun updateDitherEnabled(enabled: Boolean) {
-        _ditherEnabled.value = enabled
     }
 
     fun selectTag(tag: EPaperTag) {
@@ -152,11 +145,10 @@ class EPaperViewModel(
                 // HTTP send
                 // Extract IP address (remove http:// if present)
                 val apIp = url.replace("http://", "").replace("https://", "").split("/").first()
-                val dither = if (_ditherEnabled.value) 1 else 0
 
-                _logs.value = _logs.value + "> [ViewModel] apIp='$apIp', dither=$dither"
+                _logs.value = _logs.value + "> [ViewModel] apIp='$apIp'"
 
-                val result = httpClient.uploadImage(apIp, mac, imageData, dither)
+                val result = httpClient.uploadImage(apIp, mac, imageData)
 
                 // Build full URL for display
                 val fullUrl = if (url.startsWith("http://") || url.startsWith("https://")) url else "http://$url"
@@ -168,7 +160,6 @@ class EPaperViewModel(
                             "Content-Type: multipart/form-data",
                             "file: image.jpg (296x128)",
                             "mac: $mac",
-                            "dither: $dither",
                             "---",
                             "Response: $responseText"
                         )

@@ -43,7 +43,6 @@ fun EPaperScreen(
     val logs by viewModel.logs.collectAsState()
     val apUrl by viewModel.apUrl.collectAsState()
     val macAddress by viewModel.macAddress.collectAsState()
-    val ditherEnabled by viewModel.ditherEnabled.collectAsState()
     val savedTags by viewModel.savedTags.collectAsState()
     val currentWeight by viewModel.currentWeight.collectAsState()
 
@@ -53,12 +52,10 @@ fun EPaperScreen(
         logs = logs,
         apUrl = apUrl,
         macAddress = macAddress,
-        ditherEnabled = ditherEnabled,
         savedTags = savedTags,
         currentWeight = currentWeight,
         onApUrlChange = viewModel::updateApUrl,
         onMacAddressChange = viewModel::updateMacAddress,
-        onDitherChange = viewModel::updateDitherEnabled,
         onTagSelect = viewModel::selectTag,
         onSend = viewModel::send,
         onRefreshWeight = viewModel::refreshWeight
@@ -72,12 +69,10 @@ private fun EPaperScreenContent(
     logs: List<String>,
     apUrl: String,
     macAddress: String,
-    ditherEnabled: Boolean,
     savedTags: List<com.example.btlearninglab.data.epaper.EPaperTag>,
     currentWeight: Double,
     onApUrlChange: (String) -> Unit,
     onMacAddressChange: (String) -> Unit,
-    onDitherChange: (Boolean) -> Unit,
     onTagSelect: (com.example.btlearninglab.data.epaper.EPaperTag) -> Unit,
     onSend: () -> Unit,
     onRefreshWeight: () -> Unit
@@ -304,35 +299,6 @@ private fun EPaperScreenContent(
                                 unfocusedTextColor = AppColors.Gray800
                             ),
                             textStyle = LocalTextStyle.current.copy(fontSize = 14.sp)
-                        )
-                    }
-                }
-
-                // Dithering
-                Surface(
-                    shape = RoundedCornerShape(12.dp),
-                    color = Color.White,
-                    shadowElevation = 2.dp
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp, vertical = 12.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = "ディザリング",
-                            fontSize = 14.sp,
-                            color = AppColors.Gray700
-                        )
-                        Switch(
-                            checked = ditherEnabled,
-                            onCheckedChange = onDitherChange,
-                            colors = SwitchDefaults.colors(
-                                checkedThumbColor = AppColors.Primary400,
-                                checkedTrackColor = AppColors.Primary100
-                            )
                         )
                     }
                 }
