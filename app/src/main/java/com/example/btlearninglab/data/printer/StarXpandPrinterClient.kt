@@ -25,8 +25,60 @@ class StarXpandPrinterClient(private val context: Context) {
     private val _logs = MutableStateFlow<List<String>>(emptyList())
     val logs: StateFlow<List<String>> = _logs.asStateFlow()
 
+    private val _scannedPrinters = MutableStateFlow<List<ScannedPrinter>>(emptyList())
+    val scannedPrinters: StateFlow<List<ScannedPrinter>> = _scannedPrinters.asStateFlow()
+
     companion object {
         const val TARGET_DEVICE_NAME = "SM-S210i"
+    }
+
+    suspend fun discoverPrinters() = withContext(Dispatchers.IO) {
+        try {
+            addLog("> Searching for printers...")
+            _connectionState.value = PrinterConnectionState.Discovering
+            _scannedPrinters.value = emptyList()
+
+            val printers = discoverAllPrinters()
+
+            if (printers.isEmpty()) {
+                _connectionState.value = PrinterConnectionState.Error("No printers found")
+                addLog("> Error: No printers found")
+                return@withContext
+            }
+
+            _connectionState.value = PrinterConnectionState.Idle
+            addLog("> Discovery complete. Found ${printers.size} printer(s)")
+
+        } catch (e: Exception) {
+            addLog("> Exception: ${e.javaClass.simpleName} - ${e.message}")
+            _connectionState.value = PrinterConnectionState.Error(e.message ?: "Unknown error")
+        }
+    }
+
+    suspend fun connectToPrinter(scannedPrinter: ScannedPrinter) = withContext(Dispatchers.IO) {
+        try {
+            addLog("> Connecting to ${scannedPrinter.name}...")
+
+            val settings = StarConnectionSettings(
+                InterfaceType.Bluetooth,
+                scannedPrinter.identifier
+            )
+
+            printerSettings = settings
+
+            _connectionState.value = PrinterConnectionState.DeviceFound(
+                scannedPrinter.name,
+                scannedPrinter.identifier
+            )
+            addLog("> Found: ${scannedPrinter.name} (${scannedPrinter.identifier})")
+
+            _connectionState.value = PrinterConnectionState.Connected(scannedPrinter.name)
+            addLog("> Ready to print")
+
+        } catch (e: Exception) {
+            addLog("> Exception: ${e.javaClass.simpleName} - ${e.message}")
+            _connectionState.value = PrinterConnectionState.Error(e.message ?: "Unknown error")
+        }
     }
 
     suspend fun discoverAndConnect() = withContext(Dispatchers.IO) {
@@ -34,7 +86,6 @@ class StarXpandPrinterClient(private val context: Context) {
             addLog("> Searching for printers...")
             _connectionState.value = PrinterConnectionState.Discovering
 
-            // プリンター検索
             val printerInfo = discoverPrinter()
 
             if (printerInfo == null) {
@@ -43,7 +94,6 @@ class StarXpandPrinterClient(private val context: Context) {
                 return@withContext
             }
 
-            // 接続設定を保存
             printerSettings = printerInfo.connectionSettings
 
             _connectionState.value = PrinterConnectionState.DeviceFound(
@@ -52,7 +102,6 @@ class StarXpandPrinterClient(private val context: Context) {
             )
             addLog("> Found: $TARGET_DEVICE_NAME (${printerInfo.connectionSettings.identifier})")
 
-            // 接続済みとしてマーク（実際の接続は印刷時に行う）
             _connectionState.value = PrinterConnectionState.Connected(TARGET_DEVICE_NAME)
             addLog("> Ready to print")
 
@@ -60,6 +109,47 @@ class StarXpandPrinterClient(private val context: Context) {
             addLog("> Exception: ${e.javaClass.simpleName} - ${e.message}")
             _connectionState.value = PrinterConnectionState.Error(e.message ?: "Unknown error")
         }
+    }
+
+    private suspend fun discoverAllPrinters(): List<ScannedPrinter> = suspendCancellableCoroutine { continuation ->
+        val manager = StarDeviceDiscoveryManagerFactory.create(
+            listOf(InterfaceType.Bluetooth),
+            context
+        )
+
+        discoveryManager = manager
+        val foundPrinters = mutableListOf<ScannedPrinter>()
+
+        manager.discoveryTime = 10000
+
+        manager.callback = object : StarDeviceDiscoveryManager.Callback {
+            override fun onPrinterFound(printer: StarPrinter) {
+                val settings = printer.connectionSettings
+                if (settings != null) {
+                    val scannedPrinter = ScannedPrinter(
+                        name = settings.identifier,
+                        identifier = settings.identifier,
+                        modelName = printer.information?.model?.name ?: "Unknown Model"
+                    )
+                    foundPrinters.add(scannedPrinter)
+                    _scannedPrinters.value = foundPrinters.toList()
+                    addLog("> Found device: ${scannedPrinter.name}")
+                }
+            }
+
+            override fun onDiscoveryFinished() {
+                addLog("> Discovery finished")
+                if (continuation.isActive) {
+                    continuation.resume(foundPrinters.toList())
+                }
+            }
+        }
+
+        continuation.invokeOnCancellation {
+            manager.stopDiscovery()
+        }
+
+        manager.startDiscovery()
     }
 
     private suspend fun discoverPrinter(): StarPrinter? = suspendCancellableCoroutine { continuation ->
@@ -71,14 +161,13 @@ class StarXpandPrinterClient(private val context: Context) {
         discoveryManager = manager
         var foundPrinter: StarPrinter? = null
 
-        manager.discoveryTime = 10000 // 10秒
+        manager.discoveryTime = 10000
 
         manager.callback = object : StarDeviceDiscoveryManager.Callback {
             override fun onPrinterFound(printer: StarPrinter) {
                 val deviceName = printer.connectionSettings?.identifier ?: "Unknown"
                 addLog("> Found device: $deviceName")
 
-                // SM-S210iを探す（identifierまたはmodelNameで判定）
                 foundPrinter = printer
             }
 
@@ -109,58 +198,21 @@ class StarXpandPrinterClient(private val context: Context) {
 
         try {
             _connectionState.value = PrinterConnectionState.Printing
-            addLog("> Building print job...")
-            addLog("> Text to print: \"$text\"")
-
-            // StarXpandCommandBuilder でコマンド生成（公式推奨パターン）
-            addLog("> Creating print command with method chaining...")
-            addLog("> Input text: \"$text\"")
-            addLog("> Input text length: ${text.length} chars")
+            addLog("> Printing: \"$text\"")
 
             val commands = StarXpandCommandBuilder().apply {
                 addDocument(DocumentBuilder().apply {
                     addPrinter(PrinterBuilder().apply {
-                        addLog("> Setting Japanese character encoding...")
                         styleSecondPriorityCharacterEncoding(CharacterEncodingType.Japanese)
-                        addLog("> Japanese encoding set")
-                        actionPrintText("$text\n")
+                        actionPrintText("\n\n$text\n\n\n")
                     })
                 })
             }.getCommands()
 
-            addLog("> Commands created successfully")
-            addLog("> Command size: ${commands.length} bytes")
-
-            // JSON全体をログに出力（改行で分割して読みやすく）
-            addLog("> ==== FULL COMMAND JSON START ====")
-            commands.lines().forEach { line ->
-                addLog(line)
-            }
-            addLog("> ==== FULL COMMAND JSON END ====")
-
-            // テキストが含まれているか確認
-            if (commands.contains(text)) {
-                addLog("> ✓ Input text found in commands")
-            } else {
-                addLog("> ✗ WARNING: Input text NOT found in commands!")
-
-                // 日本語が含まれているかも確認
-                val hasJapanese = text.any { it.code > 127 }
-                if (hasJapanese) {
-                    addLog("> Input contains Japanese characters")
-                    // 英数字だけが含まれているか確認
-                    val asciiOnly = text.filter { it.code <= 127 }
-                    if (commands.contains(asciiOnly)) {
-                        addLog("> ✗ CRITICAL: Only ASCII characters found, Japanese stripped!")
-                    }
-                }
-            }
-
-            // open→print→closeのサイクル
             addLog("> Opening printer...")
             printer.openAsync().await()
 
-            addLog("> Printing...")
+            addLog("> Sending print command...")
             printer.printAsync(commands).await()
 
             addLog("> Print completed")

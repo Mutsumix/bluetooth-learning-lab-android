@@ -6,6 +6,7 @@ import androidx.lifecycle.ViewModelProvider
 import com.example.btlearninglab.data.ble.BluetoothManager
 import com.example.btlearninglab.data.ble.DecentScaleBleClient
 import com.example.btlearninglab.data.ble.PermissionHelper
+import com.example.btlearninglab.data.ble.ScaleDeviceRepository
 
 class ScaleViewModelFactory(
     private val application: Application
@@ -15,9 +16,10 @@ class ScaleViewModelFactory(
             val bleClient = DecentScaleBleClient(application.applicationContext)
             val bluetoothManager = BluetoothManager(application.applicationContext)
             val permissionHelper = PermissionHelper(application.applicationContext)
+            val deviceRepository = ScaleDeviceRepository(application.applicationContext)
 
             @Suppress("UNCHECKED_CAST")
-            return ScaleViewModel(bleClient, bluetoothManager, permissionHelper, application) as T
+            return ScaleViewModel(bleClient, bluetoothManager, permissionHelper, deviceRepository, application) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")
     }

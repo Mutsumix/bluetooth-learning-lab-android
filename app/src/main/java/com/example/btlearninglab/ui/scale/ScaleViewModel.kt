@@ -7,6 +7,8 @@ import com.example.btlearninglab.data.ble.BleConnectionState
 import com.example.btlearninglab.data.ble.BluetoothManager
 import com.example.btlearninglab.data.ble.DecentScaleBleClient
 import com.example.btlearninglab.data.ble.PermissionHelper
+import com.example.btlearninglab.data.ble.ScaleDeviceRepository
+import com.example.btlearninglab.data.ble.ScannedDevice
 import com.example.btlearninglab.data.scale.WeightRepository
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -18,6 +20,7 @@ class ScaleViewModel(
     private val bleClient: DecentScaleBleClient,
     private val bluetoothManager: BluetoothManager,
     private val permissionHelper: PermissionHelper,
+    private val deviceRepository: ScaleDeviceRepository,
     context: Context
 ) : ViewModel() {
     private val weightRepository = WeightRepository(context)
@@ -27,29 +30,70 @@ class ScaleViewModel(
     private val _logs = MutableStateFlow<List<String>>(emptyList())
     val logs: StateFlow<List<String>> = _logs.asStateFlow()
 
+    val scannedDevices: StateFlow<List<ScannedDevice>> = bluetoothManager.scannedDevices
+
+    private val _selectedDevice = MutableStateFlow<ScannedDevice?>(null)
+    val selectedDevice: StateFlow<ScannedDevice?> = _selectedDevice.asStateFlow()
+
     private var deviceAddress: String? = null
 
     init {
         observeBleState()
         observeWeightData()
         observeBleClientLogs()
+        observeScannedDevices()
     }
 
-    fun connect() {
-        // Check permissions
+    fun startScan() {
         if (!permissionHelper.hasRequiredPermissions()) {
             _uiState.value = ScaleUiState.Error("Bluetoothパーミッションが必要です")
             _logs.value = listOf("> Permission denied")
             return
         }
 
-        // Start scanning
+        _logs.value = emptyList()
+        _logs.value = _logs.value + "> Scanning for \"Decent Scale\"..."
+        _uiState.value = ScaleUiState.Connecting
+        bluetoothManager.startScan()
+    }
+
+    fun selectDevice(device: ScannedDevice) {
+        _selectedDevice.value = device
+        deviceRepository.saveSelectedDevice(device.address)
+        _logs.value = _logs.value + "> Selected: ${device.name} (${device.address})"
+    }
+
+    fun connectToSelected() {
+        val device = _selectedDevice.value
+        if (device == null) {
+            _uiState.value = ScaleUiState.Error("デバイスを選択してください")
+            return
+        }
+
+        _logs.value = _logs.value + "> Connecting to ${device.name}..."
+        deviceAddress = device.address
+
+        val bleDevice = bluetoothManager.getDeviceByAddress(device.address)
+        if (bleDevice != null) {
+            bleClient.connect(bleDevice)
+        } else {
+            _logs.value = _logs.value + "> Error: Cannot get device"
+            _uiState.value = ScaleUiState.Error("デバイスの取得に失敗しました")
+        }
+    }
+
+    fun connect() {
+        if (!permissionHelper.hasRequiredPermissions()) {
+            _uiState.value = ScaleUiState.Error("Bluetoothパーミッションが必要です")
+            _logs.value = listOf("> Permission denied")
+            return
+        }
+
         _logs.value = emptyList()
         _logs.value = _logs.value + "> Scanning for \"Decent Scale\"..."
         _uiState.value = ScaleUiState.Connecting
         bluetoothManager.startScan()
 
-        // Set timeout for scanning
         viewModelScope.launch {
             delay(10000)
             val currentState = bluetoothManager.scanState.value
@@ -156,6 +200,23 @@ class ScaleViewModel(
         viewModelScope.launch {
             bleClient.logs.collect { logs ->
                 _logs.value = logs
+            }
+        }
+    }
+
+    private fun observeScannedDevices() {
+        viewModelScope.launch {
+            scannedDevices.collect { devices ->
+                if (devices.isNotEmpty() && _selectedDevice.value == null) {
+                    val savedAddress = deviceRepository.getSavedDeviceAddress()
+                    val deviceToSelect = if (savedAddress != null) {
+                        devices.find { it.address == savedAddress } ?: devices.first()
+                    } else {
+                        devices.first()
+                    }
+                    _selectedDevice.value = deviceToSelect
+                    _logs.value = _logs.value + "> Auto-selected: ${deviceToSelect.name}"
+                }
             }
         }
     }

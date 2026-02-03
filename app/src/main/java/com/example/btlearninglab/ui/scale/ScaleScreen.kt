@@ -35,11 +35,18 @@ fun ScaleScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val logs by viewModel.logs.collectAsState()
+    val scannedDevices by viewModel.scannedDevices.collectAsState()
+    val selectedDevice by viewModel.selectedDevice.collectAsState()
 
     ScaleScreenContent(
         navController = navController,
         uiState = uiState,
         logs = logs,
+        scannedDevices = scannedDevices,
+        selectedDevice = selectedDevice,
+        onStartScan = viewModel::startScan,
+        onSelectDevice = viewModel::selectDevice,
+        onConnectToSelected = viewModel::connectToSelected,
         onConnect = viewModel::connect,
         onDisconnect = viewModel::disconnect,
         onTare = viewModel::tare
@@ -51,6 +58,11 @@ private fun ScaleScreenContent(
     navController: NavController,
     uiState: ScaleUiState,
     logs: List<String>,
+    scannedDevices: List<com.example.btlearninglab.data.ble.ScannedDevice>,
+    selectedDevice: com.example.btlearninglab.data.ble.ScannedDevice?,
+    onStartScan: () -> Unit,
+    onSelectDevice: (com.example.btlearninglab.data.ble.ScannedDevice) -> Unit,
+    onConnectToSelected: () -> Unit,
     onConnect: () -> Unit,
     onDisconnect: () -> Unit,
     onTare: () -> Unit
@@ -149,6 +161,84 @@ private fun ScaleScreenContent(
                 }
             }
 
+            // Device Selection Dropdown
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 24.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                if (scannedDevices.isNotEmpty()) {
+                    var expanded by remember { mutableStateOf(false) }
+
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text(
+                            text = "デバイス選択",
+                            fontSize = 14.sp,
+                            color = AppColors.Gray500
+                        )
+                        Surface(
+                            shape = RoundedCornerShape(12.dp),
+                            color = Color.White,
+                            shadowElevation = 2.dp,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Box {
+                                TextButton(
+                                    onClick = { expanded = true },
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Text(
+                                            text = selectedDevice?.getDisplayName() ?: "デバイスを選択",
+                                            fontSize = 14.sp,
+                                            color = AppColors.Gray700
+                                        )
+                                        Text(
+                                            text = "▼",
+                                            fontSize = 12.sp,
+                                            color = AppColors.Gray500
+                                        )
+                                    }
+                                }
+                                DropdownMenu(
+                                    expanded = expanded,
+                                    onDismissRequest = { expanded = false }
+                                ) {
+                                    scannedDevices.forEach { device ->
+                                        DropdownMenuItem(
+                                            text = {
+                                                Column {
+                                                    Text(
+                                                        text = device.name,
+                                                        fontWeight = FontWeight.Bold,
+                                                        fontSize = 14.sp
+                                                    )
+                                                    Text(
+                                                        text = "${device.address.takeLast(8)} / RSSI: ${device.rssi}",
+                                                        fontSize = 12.sp,
+                                                        color = AppColors.Gray500
+                                                    )
+                                                }
+                                            },
+                                            onClick = {
+                                                onSelectDevice(device)
+                                                expanded = false
+                                            }
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    Spacer(modifier = Modifier.height(8.dp))
+                }
+            }
+
             // Action Buttons
             Row(
                 modifier = Modifier
@@ -156,23 +246,45 @@ private fun ScaleScreenContent(
                     .padding(horizontal = 24.dp),
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                Button(
-                    onClick = { if (isConnected) onDisconnect() else onConnect() },
-                    modifier = Modifier
-                        .weight(1f)
-                        .height(56.dp),
-                    shape = RoundedCornerShape(12.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = if (isConnected) AppColors.Red50 else AppColors.Primary400,
-                        contentColor = if (isConnected) AppColors.Red500 else Color.White
-                    ),
-                    elevation = ButtonDefaults.buttonElevation(defaultElevation = 2.dp)
-                ) {
-                    Text(
-                        text = if (isConnected) "切断" else "接続",
-                        fontWeight = FontWeight.SemiBold,
-                        fontSize = 16.sp
-                    )
+                if (scannedDevices.isEmpty()) {
+                    Button(
+                        onClick = { if (isConnected) onDisconnect() else onStartScan() },
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(56.dp),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = if (isConnected) AppColors.Red50 else AppColors.Primary400,
+                            contentColor = if (isConnected) AppColors.Red500 else Color.White
+                        ),
+                        elevation = ButtonDefaults.buttonElevation(defaultElevation = 2.dp)
+                    ) {
+                        Text(
+                            text = if (isConnected) "切断" else "スキャン",
+                            fontWeight = FontWeight.SemiBold,
+                            fontSize = 16.sp
+                        )
+                    }
+                } else {
+                    Button(
+                        onClick = { if (isConnected) onDisconnect() else onConnectToSelected() },
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(56.dp),
+                        enabled = selectedDevice != null || isConnected,
+                        shape = RoundedCornerShape(12.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = if (isConnected) AppColors.Red50 else AppColors.Primary400,
+                            contentColor = if (isConnected) AppColors.Red500 else Color.White
+                        ),
+                        elevation = ButtonDefaults.buttonElevation(defaultElevation = 2.dp)
+                    ) {
+                        Text(
+                            text = if (isConnected) "切断" else "接続",
+                            fontWeight = FontWeight.SemiBold,
+                            fontSize = 16.sp
+                        )
+                    }
                 }
                 OutlinedButton(
                     onClick = onTare,

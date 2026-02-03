@@ -3,6 +3,8 @@ package com.example.btlearninglab.ui.printer
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.btlearninglab.data.printer.PrinterConnectionState
+import com.example.btlearninglab.data.printer.PrinterDeviceRepository
+import com.example.btlearninglab.data.printer.ScannedPrinter
 import com.example.btlearninglab.data.printer.StarXpandPrinterClient
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -11,7 +13,8 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 class PrinterViewModel(
-    private val printerClient: StarXpandPrinterClient
+    private val printerClient: StarXpandPrinterClient,
+    private val deviceRepository: PrinterDeviceRepository
 ) : ViewModel() {
     private val _uiState = MutableStateFlow<PrinterUiState>(PrinterUiState.Disconnected)
     val uiState: StateFlow<PrinterUiState> = _uiState.asStateFlow()
@@ -25,14 +28,60 @@ class PrinterViewModel(
     private val _showCommand = MutableStateFlow(false)
     val showCommand: StateFlow<Boolean> = _showCommand.asStateFlow()
 
+    val scannedPrinters: StateFlow<List<ScannedPrinter>> = printerClient.scannedPrinters
+
+    private val _selectedPrinter = MutableStateFlow<ScannedPrinter?>(null)
+    val selectedPrinter: StateFlow<ScannedPrinter?> = _selectedPrinter.asStateFlow()
+
     init {
         observePrinterConnectionState()
         observePrinterLogs()
+        observeScannedPrinters()
     }
 
     fun updateText(newText: String) {
         if (newText.length <= 200) {
             _text.value = newText
+        }
+    }
+
+    fun startScan() {
+        if (_uiState.value !is PrinterUiState.Disconnected) return
+
+        viewModelScope.launch {
+            try {
+                _uiState.value = PrinterUiState.Connecting
+                _logs.value = emptyList()
+                printerClient.discoverPrinters()
+            } catch (e: Exception) {
+                _logs.value = _logs.value + "> Error: ${e.message}"
+                _uiState.value = PrinterUiState.Error(message = e.message ?: "Unknown error")
+            }
+        }
+    }
+
+    fun selectPrinter(printer: ScannedPrinter) {
+        _selectedPrinter.value = printer
+        deviceRepository.saveSelectedPrinter(printer.identifier)
+        _logs.value = _logs.value + "> Selected: ${printer.name}"
+    }
+
+    fun connectToSelected() {
+        val printer = _selectedPrinter.value
+        if (printer == null) {
+            _uiState.value = PrinterUiState.Error("プリンターを選択してください")
+            return
+        }
+
+        viewModelScope.launch {
+            try {
+                _uiState.value = PrinterUiState.Connecting
+                _logs.value = _logs.value + "> Connecting to ${printer.name}..."
+                printerClient.connectToPrinter(printer)
+            } catch (e: Exception) {
+                _logs.value = _logs.value + "> Error: ${e.message}"
+                _uiState.value = PrinterUiState.Error(message = e.message ?: "Unknown error")
+            }
         }
     }
 
@@ -112,6 +161,23 @@ class PrinterViewModel(
         viewModelScope.launch {
             printerClient.logs.collect { logs ->
                 _logs.value = logs
+            }
+        }
+    }
+
+    private fun observeScannedPrinters() {
+        viewModelScope.launch {
+            scannedPrinters.collect { printers ->
+                if (printers.isNotEmpty() && _selectedPrinter.value == null) {
+                    val savedIdentifier = deviceRepository.getSavedPrinterIdentifier()
+                    val printerToSelect = if (savedIdentifier != null) {
+                        printers.find { it.identifier == savedIdentifier } ?: printers.first()
+                    } else {
+                        printers.first()
+                    }
+                    _selectedPrinter.value = printerToSelect
+                    _logs.value = _logs.value + "> Auto-selected: ${printerToSelect.name}"
+                }
             }
         }
     }

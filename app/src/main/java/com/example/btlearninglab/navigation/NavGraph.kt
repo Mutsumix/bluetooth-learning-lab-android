@@ -8,7 +8,6 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.btlearninglab.ui.epaper.EPaperScreen
 import com.example.btlearninglab.ui.home.HomeScreen
-import com.example.btlearninglab.ui.log.LogScreen
 import com.example.btlearninglab.ui.printer.PrinterScreen
 import com.example.btlearninglab.ui.scale.ScaleScreen
 
@@ -17,7 +16,6 @@ sealed class Screen(val route: String) {
     object Scale : Screen("scale")
     object Printer : Screen("printer")
     object EPaper : Screen("epaper")
-    object Log : Screen("log")
 }
 
 @Composable
@@ -43,9 +41,6 @@ fun NavGraph() {
         }
         composable(route = Screen.EPaper.route) {
             EPaperScreen(navController = navController)
-        }
-        composable(route = Screen.Log.route) {
-            LogScreen(navController = navController)
         }
     }
 }

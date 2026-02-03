@@ -6,7 +6,6 @@ data class DeviceInfo(
     val id: String,
     val name: String,
     val type: String,
-    val status: String,
     val backgroundColor: Color,
     val borderColor: Color,
     val iconColor: Color,

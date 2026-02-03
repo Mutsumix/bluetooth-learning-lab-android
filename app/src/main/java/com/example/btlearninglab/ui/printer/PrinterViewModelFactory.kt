@@ -3,6 +3,7 @@ package com.example.btlearninglab.ui.printer
 import android.app.Application
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
+import com.example.btlearninglab.data.printer.PrinterDeviceRepository
 import com.example.btlearninglab.data.printer.StarXpandPrinterClient
 
 class PrinterViewModelFactory(
@@ -11,9 +12,10 @@ class PrinterViewModelFactory(
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(PrinterViewModel::class.java)) {
             val printerClient = StarXpandPrinterClient(application.applicationContext)
+            val deviceRepository = PrinterDeviceRepository(application.applicationContext)
 
             @Suppress("UNCHECKED_CAST")
-            return PrinterViewModel(printerClient) as T
+            return PrinterViewModel(printerClient, deviceRepository) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")
     }

@@ -32,10 +32,9 @@ data class TabItem(
 fun BottomNavigationBar(navController: NavController) {
     val tabs = listOf(
         TabItem(Screen.Home.route, R.drawable.ic_home, "ホーム"),
-        TabItem(Screen.Scale.route, R.drawable.ic_scale, "Scale"),
-        TabItem(Screen.Printer.route, R.drawable.ic_printer, "Printer"),
-        TabItem(Screen.EPaper.route, R.drawable.ic_epaper, "E-Paper"),
-        TabItem(Screen.Log.route, R.drawable.ic_log, "ログ")
+        TabItem(Screen.Scale.route, R.drawable.ic_scale, "はかり"),
+        TabItem(Screen.Printer.route, R.drawable.ic_printer, "プリンター"),
+        TabItem(Screen.EPaper.route, R.drawable.ic_epaper, "電子タグ")
     )
 
     val currentRoute = navController.currentBackStackEntryAsState().value?.destination?.route

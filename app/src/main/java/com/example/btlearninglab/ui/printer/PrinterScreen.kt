@@ -40,6 +40,8 @@ fun PrinterScreen(
     val logs by viewModel.logs.collectAsState()
     val text by viewModel.text.collectAsState()
     val showCommand by viewModel.showCommand.collectAsState()
+    val scannedPrinters by viewModel.scannedPrinters.collectAsState()
+    val selectedPrinter by viewModel.selectedPrinter.collectAsState()
 
     PrinterScreenContent(
         navController = navController,
@@ -47,7 +49,12 @@ fun PrinterScreen(
         logs = logs,
         text = text,
         showCommand = showCommand,
+        scannedPrinters = scannedPrinters,
+        selectedPrinter = selectedPrinter,
         onTextChange = viewModel::updateText,
+        onStartScan = viewModel::startScan,
+        onSelectPrinter = viewModel::selectPrinter,
+        onConnectToSelected = viewModel::connectToSelected,
         onConnect = viewModel::connect,
         onDisconnect = viewModel::disconnect,
         onPrint = viewModel::print
@@ -61,7 +68,12 @@ private fun PrinterScreenContent(
     logs: List<String>,
     text: String,
     showCommand: Boolean,
+    scannedPrinters: List<com.example.btlearninglab.data.printer.ScannedPrinter>,
+    selectedPrinter: com.example.btlearninglab.data.printer.ScannedPrinter?,
     onTextChange: (String) -> Unit,
+    onStartScan: () -> Unit,
+    onSelectPrinter: (com.example.btlearninglab.data.printer.ScannedPrinter) -> Unit,
+    onConnectToSelected: () -> Unit,
     onConnect: () -> Unit,
     onDisconnect: () -> Unit,
     onPrint: () -> Unit
@@ -142,7 +154,7 @@ private fun PrinterScreenContent(
                             color = AppColors.PastelPeach,
                             shape = RoundedCornerShape(16.dp)
                         )
-                        .padding(20.dp)
+                        .padding(12.dp)
                 ) {
                     Column {
                         TextField(
@@ -150,7 +162,7 @@ private fun PrinterScreenContent(
                             onValueChange = onTextChange,
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .height(96.dp),
+                                .height(120.dp),
                             placeholder = {
                                 Text(
                                     text = "印刷するテキストを入力...",
@@ -175,8 +187,85 @@ private fun PrinterScreenContent(
                             color = AppColors.Gray400,
                             modifier = Modifier
                                 .align(Alignment.End)
-                                .padding(top = 8.dp)
+                                .padding(top = 4.dp)
                         )
+                    }
+                }
+            }
+
+            // Printer Selection Dropdown
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 24.dp, vertical = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                if (scannedPrinters.isNotEmpty()) {
+                    var expanded by remember { mutableStateOf(false) }
+
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text(
+                            text = "プリンター選択",
+                            fontSize = 14.sp,
+                            color = AppColors.Gray500
+                        )
+                        Surface(
+                            shape = RoundedCornerShape(12.dp),
+                            color = Color.White,
+                            shadowElevation = 2.dp,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Box {
+                                TextButton(
+                                    onClick = { expanded = true },
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Text(
+                                            text = selectedPrinter?.getDisplayName() ?: "プリンターを選択",
+                                            fontSize = 14.sp,
+                                            color = AppColors.Gray700
+                                        )
+                                        Text(
+                                            text = "▼",
+                                            fontSize = 12.sp,
+                                            color = AppColors.Gray500
+                                        )
+                                    }
+                                }
+                                DropdownMenu(
+                                    expanded = expanded,
+                                    onDismissRequest = { expanded = false }
+                                ) {
+                                    scannedPrinters.forEach { printer ->
+                                        DropdownMenuItem(
+                                            text = {
+                                                Column {
+                                                    Text(
+                                                        text = printer.name,
+                                                        fontWeight = FontWeight.Bold,
+                                                        fontSize = 14.sp
+                                                    )
+                                                    Text(
+                                                        text = printer.modelName,
+                                                        fontSize = 12.sp,
+                                                        color = AppColors.Gray500
+                                                    )
+                                                }
+                                            },
+                                            onClick = {
+                                                onSelectPrinter(printer)
+                                                expanded = false
+                                            }
+                                        )
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -188,23 +277,45 @@ private fun PrinterScreenContent(
                     .padding(horizontal = 24.dp, vertical = 16.dp),
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                Button(
-                    onClick = { if (isConnected) onDisconnect() else onConnect() },
-                    modifier = Modifier
-                        .weight(1f)
-                        .height(56.dp),
-                    shape = RoundedCornerShape(12.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = if (isConnected) AppColors.Red50 else AppColors.Primary400,
-                        contentColor = if (isConnected) AppColors.Red500 else Color.White
-                    ),
-                    elevation = ButtonDefaults.buttonElevation(defaultElevation = 2.dp)
-                ) {
-                    Text(
-                        text = if (isConnected) "切断" else "接続",
-                        fontWeight = FontWeight.SemiBold,
-                        fontSize = 16.sp
-                    )
+                if (scannedPrinters.isEmpty()) {
+                    Button(
+                        onClick = { if (isConnected) onDisconnect() else onStartScan() },
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(56.dp),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = if (isConnected) AppColors.Red50 else AppColors.Primary400,
+                            contentColor = if (isConnected) AppColors.Red500 else Color.White
+                        ),
+                        elevation = ButtonDefaults.buttonElevation(defaultElevation = 2.dp)
+                    ) {
+                        Text(
+                            text = if (isConnected) "切断" else "スキャン",
+                            fontWeight = FontWeight.SemiBold,
+                            fontSize = 16.sp
+                        )
+                    }
+                } else {
+                    Button(
+                        onClick = { if (isConnected) onDisconnect() else onConnectToSelected() },
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(56.dp),
+                        enabled = selectedPrinter != null || isConnected,
+                        shape = RoundedCornerShape(12.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = if (isConnected) AppColors.Red50 else AppColors.Primary400,
+                            contentColor = if (isConnected) AppColors.Red500 else Color.White
+                        ),
+                        elevation = ButtonDefaults.buttonElevation(defaultElevation = 2.dp)
+                    ) {
+                        Text(
+                            text = if (isConnected) "切断" else "接続",
+                            fontWeight = FontWeight.SemiBold,
+                            fontSize = 16.sp
+                        )
+                    }
                 }
                 OutlinedButton(
                     onClick = onPrint,
@@ -232,7 +343,6 @@ private fun PrinterScreenContent(
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        // CircularProgressIndicatorを削除 - Composeバージョン不整合でクラッシュするため
                         Icon(
                             painter = painterResource(id = R.drawable.ic_printer),
                             contentDescription = "Print",

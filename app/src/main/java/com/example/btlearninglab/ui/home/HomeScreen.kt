@@ -48,7 +48,6 @@ private fun HomeScreenContent(
                 id = "scale",
                 name = "Decent Scale",
                 type = "BLE · 重量取得",
-                status = "未接続",
                 backgroundColor = AppColors.PastelMint.copy(alpha = 0.3f),
                 borderColor = AppColors.PastelMint,
                 iconColor = AppColors.ScaleIcon,
@@ -58,7 +57,6 @@ private fun HomeScreenContent(
                 id = "printer",
                 name = "SM-S210i Printer",
                 type = "Bluetooth Classic · 印刷",
-                status = "未接続",
                 backgroundColor = AppColors.PastelPeach.copy(alpha = 0.3f),
                 borderColor = AppColors.PastelPeach,
                 iconColor = AppColors.PrinterIcon,
@@ -68,7 +66,6 @@ private fun HomeScreenContent(
                 id = "epaper",
                 name = "Gicisky E-Paper",
                 type = "HTTP → ESP32 AP → BLE",
-                status = "未接続",
                 backgroundColor = AppColors.PastelLavender.copy(alpha = 0.3f),
                 borderColor = AppColors.PastelLavender,
                 iconColor = AppColors.EPaperIcon,
@@ -300,23 +297,6 @@ fun DeviceCard(
                         fontSize = 14.sp,
                         color = AppColors.Gray500
                     )
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        modifier = Modifier.padding(top = 8.dp)
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .size(8.dp)
-                                .clip(CircleShape)
-                                .background(AppColors.Gray300)
-                        )
-                        Text(
-                            text = device.status,
-                            fontSize = 12.sp,
-                            color = AppColors.Gray400
-                        )
-                    }
                 }
 
                 // Arrow
