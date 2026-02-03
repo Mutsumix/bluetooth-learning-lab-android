@@ -56,32 +56,58 @@ class StarXpandPrinterClient(private val context: Context) {
     }
 
     suspend fun connectToPrinter(scannedPrinter: ScannedPrinter) = withContext(Dispatchers.IO) {
+        var printer: StarPrinter? = null
         try {
             addLog("> Connecting to ${scannedPrinter.name}...")
+            _connectionState.value = PrinterConnectionState.Connecting
 
             val settings = StarConnectionSettings(
                 InterfaceType.Bluetooth,
                 scannedPrinter.identifier
             )
 
-            printerSettings = settings
+            printer = StarPrinter(settings, context)
 
-            _connectionState.value = PrinterConnectionState.DeviceFound(
-                scannedPrinter.name,
-                scannedPrinter.identifier
-            )
-            addLog("> Found: ${scannedPrinter.name} (${scannedPrinter.identifier})")
+            addLog("> Testing connection...")
+            printer.openAsync().await()
+            addLog("> Connection successful")
+
+            printerSettings = settings
 
             _connectionState.value = PrinterConnectionState.Connected(scannedPrinter.name)
             addLog("> Ready to print")
 
+        } catch (e: StarIO10NotFoundException) {
+            addLog("> Error: Printer not found")
+            addLog("> Please check if the printer is powered on")
+            _connectionState.value = PrinterConnectionState.Error("プリンターが見つかりません。電源を確認してください")
+            printerSettings = null
+        } catch (e: StarIO10CommunicationException) {
+            addLog("> Error: Communication failed")
+            addLog("> ${e.message}")
+            _connectionState.value = PrinterConnectionState.Error("通信エラー: プリンターとの接続に失敗しました")
+            printerSettings = null
+        } catch (e: StarIO10Exception) {
+            addLog("> Error: ${e.javaClass.simpleName}")
+            addLog("> ${e.message}")
+            _connectionState.value = PrinterConnectionState.Error("接続エラー: ${e.message}")
+            printerSettings = null
         } catch (e: Exception) {
             addLog("> Exception: ${e.javaClass.simpleName} - ${e.message}")
             _connectionState.value = PrinterConnectionState.Error(e.message ?: "Unknown error")
+            printerSettings = null
+        } finally {
+            try {
+                printer?.closeAsync()?.await()
+                addLog("> Connection test completed")
+            } catch (e: Exception) {
+                // Ignore close errors
+            }
         }
     }
 
     suspend fun discoverAndConnect() = withContext(Dispatchers.IO) {
+        var printer: StarPrinter? = null
         try {
             addLog("> Searching for printers...")
             _connectionState.value = PrinterConnectionState.Discovering
@@ -94,20 +120,45 @@ class StarXpandPrinterClient(private val context: Context) {
                 return@withContext
             }
 
-            printerSettings = printerInfo.connectionSettings
+            val settings = printerInfo.connectionSettings
+            addLog("> Found: $TARGET_DEVICE_NAME (${settings.identifier})")
+            addLog("> Testing connection...")
+            _connectionState.value = PrinterConnectionState.Connecting
 
-            _connectionState.value = PrinterConnectionState.DeviceFound(
-                TARGET_DEVICE_NAME,
-                printerInfo.connectionSettings.identifier
-            )
-            addLog("> Found: $TARGET_DEVICE_NAME (${printerInfo.connectionSettings.identifier})")
+            printer = StarPrinter(settings, context)
+            printer.openAsync().await()
+            addLog("> Connection successful")
 
+            printerSettings = settings
             _connectionState.value = PrinterConnectionState.Connected(TARGET_DEVICE_NAME)
             addLog("> Ready to print")
 
+        } catch (e: StarIO10NotFoundException) {
+            addLog("> Error: Printer not found")
+            addLog("> Please check if the printer is powered on")
+            _connectionState.value = PrinterConnectionState.Error("プリンターが見つかりません。電源を確認してください")
+            printerSettings = null
+        } catch (e: StarIO10CommunicationException) {
+            addLog("> Error: Communication failed")
+            addLog("> ${e.message}")
+            _connectionState.value = PrinterConnectionState.Error("通信エラー: プリンターとの接続に失敗しました")
+            printerSettings = null
+        } catch (e: StarIO10Exception) {
+            addLog("> Error: ${e.javaClass.simpleName}")
+            addLog("> ${e.message}")
+            _connectionState.value = PrinterConnectionState.Error("接続エラー: ${e.message}")
+            printerSettings = null
         } catch (e: Exception) {
             addLog("> Exception: ${e.javaClass.simpleName} - ${e.message}")
             _connectionState.value = PrinterConnectionState.Error(e.message ?: "Unknown error")
+            printerSettings = null
+        } finally {
+            try {
+                printer?.closeAsync()?.await()
+                addLog("> Connection test completed")
+            } catch (e: Exception) {
+                // Ignore close errors
+            }
         }
     }
 
