@@ -114,15 +114,47 @@ class StarXpandPrinterClient(private val context: Context) {
 
             // StarXpandCommandBuilder でコマンド生成（公式推奨パターン）
             addLog("> Creating print command with method chaining...")
+            addLog("> Input text: \"$text\"")
+            addLog("> Input text length: ${text.length} chars")
+
             val commands = StarXpandCommandBuilder().apply {
                 addDocument(DocumentBuilder().apply {
                     addPrinter(PrinterBuilder().apply {
+                        addLog("> Setting Japanese character encoding...")
+                        styleSecondPriorityCharacterEncoding(CharacterEncodingType.Japanese)
+                        addLog("> Japanese encoding set")
                         actionPrintText("$text\n")
                     })
                 })
             }.getCommands()
+
             addLog("> Commands created successfully")
-            addLog("> Command preview: ${commands.take(100)}")
+            addLog("> Command size: ${commands.length} bytes")
+
+            // JSON全体をログに出力（改行で分割して読みやすく）
+            addLog("> ==== FULL COMMAND JSON START ====")
+            commands.lines().forEach { line ->
+                addLog(line)
+            }
+            addLog("> ==== FULL COMMAND JSON END ====")
+
+            // テキストが含まれているか確認
+            if (commands.contains(text)) {
+                addLog("> ✓ Input text found in commands")
+            } else {
+                addLog("> ✗ WARNING: Input text NOT found in commands!")
+
+                // 日本語が含まれているかも確認
+                val hasJapanese = text.any { it.code > 127 }
+                if (hasJapanese) {
+                    addLog("> Input contains Japanese characters")
+                    // 英数字だけが含まれているか確認
+                    val asciiOnly = text.filter { it.code <= 127 }
+                    if (commands.contains(asciiOnly)) {
+                        addLog("> ✗ CRITICAL: Only ASCII characters found, Japanese stripped!")
+                    }
+                }
+            }
 
             // open→print→closeのサイクル
             addLog("> Opening printer...")

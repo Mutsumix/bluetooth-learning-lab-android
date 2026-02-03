@@ -72,11 +72,10 @@ app/src/main/java/com/example/btlearninglab/
 - **レスポンシブレイアウト**: 縦スクロール対応、適切な余白設定
 - **視覚的フィードバック**: ローディング状態、エラー表示、ボタン無効化
 
-### モック実装
-現在は実際のBluetooth/HTTP通信は実装されておらず、以下の機能がモックで動作:
-- Scale: 接続・切断・Tare（重量リセット）
-- Printer: 接続・切断・印刷（テキスト送信）
-- EPaper: HTTP送信（画像アップロード）
+### 実装状況
+- **Scale (Decent Scale)**: モック実装 - 接続・切断・Tare（重量リセット）
+- **Printer (SM-S210i)**: StarXpand SDK実装完了 - Bluetooth接続・日本語印刷対応
+- **EPaper (Gicisky)**: モック実装 - HTTP送信（画像アップロード）
 - 各画面で通信ログを表示
 
 ## セットアップ
@@ -104,9 +103,9 @@ app/src/main/java/com/example/btlearninglab/
 - [x] BottomNavigationBar (画面遷移)
 - [x] モック実装による動作確認
 
-### Phase 3: 機能実装 (次回)
+### Phase 3: 機能実装 🚧
 - [ ] Decent Scale（Android BLE API）
-- [ ] SM-S210i（StarXpand SDK）
+- [x] SM-S210i（StarXpand SDK）- 日本語印刷対応
 - [ ] Gicisky（HTTP API）
 
 ## ビルド方法
