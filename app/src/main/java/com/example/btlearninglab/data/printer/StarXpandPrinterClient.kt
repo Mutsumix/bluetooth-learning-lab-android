@@ -345,7 +345,7 @@ class StarXpandPrinterClient(private val context: Context) {
             val commands = StarXpandCommandBuilder().apply {
                 addDocument(DocumentBuilder().apply {
                     addPrinter(PrinterBuilder().apply {
-                        actionPrintImage(PrinterImageParameter(bitmap, printWidth))
+                        actionPrintImage(ImageParameter(bitmap, printWidth))
                         actionCut(CutType.Partial)
                     })
                 })
