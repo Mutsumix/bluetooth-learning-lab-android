@@ -1,6 +1,7 @@
 package com.example.btlearninglab.data.printer
 
 import android.content.Context
+import android.graphics.BitmapFactory
 import android.util.Log
 import com.starmicronics.stario10.*
 import com.starmicronics.stario10.starxpandcommand.*
@@ -308,6 +309,72 @@ class StarXpandPrinterClient(private val context: Context) {
             // 必ずクローズ
             try {
                 addLog("> Closing printer...")
+                printer.closeAsync().await()
+            } catch (e: Exception) {
+                addLog("> Close error (ignored): ${e.message}")
+            }
+        }
+    }
+
+    suspend fun printImage(assetFileName: String) = withContext(Dispatchers.IO) {
+        val settings = printerSettings
+        if (settings == null) {
+            addLog("> Error: Not connected")
+            return@withContext
+        }
+
+        val printer = StarPrinter(settings, context)
+
+        try {
+            _connectionState.value = PrinterConnectionState.Printing
+            addLog("> Loading image: $assetFileName")
+
+            val bitmap = context.assets.open(assetFileName).use { stream ->
+                BitmapFactory.decodeStream(stream)
+            } ?: run {
+                addLog("> Error: Failed to load image")
+                _connectionState.value = PrinterConnectionState.Connected(TARGET_DEVICE_NAME)
+                return@withContext
+            }
+
+            addLog("> Image size: ${bitmap.width}x${bitmap.height}")
+
+            // SM-S210iの印刷幅: 384ドット（2インチ感熱紙）
+            val printWidth = 384
+
+            val commands = StarXpandCommandBuilder().apply {
+                addDocument(DocumentBuilder().apply {
+                    addPrinter(PrinterBuilder().apply {
+                        actionPrintImage(PrinterImageParameter(bitmap, printWidth))
+                        actionCut(CutType.Partial)
+                    })
+                })
+            }.getCommands()
+
+            addLog("> Opening printer...")
+            printer.openAsync().await()
+
+            addLog("> Sending image...")
+            printer.printAsync(commands).await()
+
+            addLog("> Print completed")
+            _connectionState.value = PrinterConnectionState.Connected(TARGET_DEVICE_NAME)
+
+        } catch (e: StarIO10UnprintableException) {
+            addLog("> Unprintable error: ${e.errorCode} - ${e.message}")
+            when (e.errorCode.name) {
+                "DeviceHasError" -> _connectionState.value = PrinterConnectionState.Error("用紙切れまたはカバー開放")
+                "PrinterHoldingPaper" -> _connectionState.value = PrinterConnectionState.Error("前の用紙を取り除いてください")
+                else -> _connectionState.value = PrinterConnectionState.Connected(TARGET_DEVICE_NAME)
+            }
+        } catch (e: StarIO10Exception) {
+            addLog("> StarIO10 error: ${e.javaClass.simpleName} - ${e.message}")
+            _connectionState.value = PrinterConnectionState.Error(e.message ?: "Print failed")
+        } catch (e: Exception) {
+            addLog("> Exception: ${e.javaClass.simpleName} - ${e.message}")
+            _connectionState.value = PrinterConnectionState.Error(e.message ?: "Print failed")
+        } finally {
+            try {
                 printer.closeAsync().await()
             } catch (e: Exception) {
                 addLog("> Close error (ignored): ${e.message}")

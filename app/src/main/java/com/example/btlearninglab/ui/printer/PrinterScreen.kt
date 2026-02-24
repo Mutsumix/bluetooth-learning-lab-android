@@ -57,7 +57,8 @@ fun PrinterScreen(
         onConnectToSelected = viewModel::connectToSelected,
         onConnect = viewModel::connect,
         onDisconnect = viewModel::disconnect,
-        onPrint = viewModel::print
+        onPrint = viewModel::print,
+        onPrintImage = viewModel::printImage
     )
 }
 
@@ -76,7 +77,8 @@ private fun PrinterScreenContent(
     onConnectToSelected: () -> Unit,
     onConnect: () -> Unit,
     onDisconnect: () -> Unit,
-    onPrint: () -> Unit
+    onPrint: () -> Unit,
+    onPrintImage: () -> Unit
 ) {
     val isConnected = uiState is PrinterUiState.Connected
     val isPrinting = uiState is PrinterUiState.Printing
@@ -354,6 +356,40 @@ private fun PrinterScreenContent(
                             fontSize = 16.sp
                         )
                     }
+                }
+            }
+
+            // Event Image Print Button
+            Button(
+                onClick = onPrintImage,
+                enabled = isConnected && !isPrinting,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 24.dp)
+                    .height(56.dp),
+                shape = RoundedCornerShape(12.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = AppColors.Primary500,
+                    contentColor = Color.White,
+                    disabledContainerColor = AppColors.Gray200,
+                    disabledContentColor = AppColors.Gray400
+                ),
+                elevation = ButtonDefaults.buttonElevation(defaultElevation = 2.dp)
+            ) {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.ic_printer),
+                        contentDescription = "Print Event Image",
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Text(
+                        text = "エルプサイコングルゥ",
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 16.sp
+                    )
                 }
             }
 

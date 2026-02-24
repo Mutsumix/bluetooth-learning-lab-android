@@ -193,6 +193,65 @@ class EPaperViewModel(
         }
     }
 
+    fun sendLogoImage() {
+        val url = _apUrl.value.trim()
+        var mac = _macAddress.value.trim()
+
+        if (url.isEmpty() || mac.isEmpty()) {
+            _uiState.value = EPaperUiState.Error("AP URLとMACアドレスを入力してください")
+            return
+        }
+
+        mac = mac.replace(":", "")
+
+        if (_uiState.value is EPaperUiState.Sending) return
+
+        viewModelScope.launch {
+            try {
+                _uiState.value = EPaperUiState.Sending
+                _logs.value = listOf("> [ViewModel] Sending logo image, url='$url', mac='$mac'")
+
+                val imageData = withContext(Dispatchers.IO) {
+                    ImageGenerator.generateLogoImage(context)
+                }
+
+                val apIp = url.replace("http://", "").replace("https://", "").split("/").first()
+                val result = httpClient.uploadImage(apIp, mac, imageData)
+
+                val fullUrl = if (url.startsWith("http://") || url.startsWith("https://")) url else "http://$url"
+
+                result.fold(
+                    onSuccess = { responseText ->
+                        val httpRequest = listOf(
+                            "POST $fullUrl/imgupload",
+                            "Content-Type: multipart/form-data",
+                            "file: gadget-lab-logo.jpg (296x128)",
+                            "mac: $mac",
+                            "---",
+                            "Response: $responseText"
+                        )
+                        _uiState.value = EPaperUiState.Sent(httpRequest = httpRequest)
+                        saveCurrentTag()
+                        delay(3000)
+                        if (_uiState.value is EPaperUiState.Sent) {
+                            _uiState.value = EPaperUiState.Idle
+                        }
+                    },
+                    onFailure = { error ->
+                        _uiState.value = EPaperUiState.Error(error.message ?: "送信に失敗しました")
+                        delay(2000)
+                        _uiState.value = EPaperUiState.Idle
+                    }
+                )
+            } catch (e: Exception) {
+                _logs.value = _logs.value + "> Exception: ${e.message}"
+                _uiState.value = EPaperUiState.Error(e.message ?: "Unknown error")
+                delay(2000)
+                _uiState.value = EPaperUiState.Idle
+            }
+        }
+    }
+
     private fun observeHttpClientLogs() {
         viewModelScope.launch {
             httpClient.logs.collect { httpLogs ->

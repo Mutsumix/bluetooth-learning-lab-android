@@ -100,6 +100,21 @@ class PrinterViewModel(
         }
     }
 
+    fun printImage() {
+        val currentState = _uiState.value
+        if (currentState !is PrinterUiState.Connected) return
+
+        viewModelScope.launch {
+            try {
+                _uiState.value = PrinterUiState.Printing
+                printerClient.printImage("gadget-lab-gray.png")
+            } catch (e: Exception) {
+                _logs.value = _logs.value + "> Print Image Error: ${e.message}"
+                _uiState.value = PrinterUiState.Error(message = e.message ?: "Unknown error")
+            }
+        }
+    }
+
     fun disconnect() {
         viewModelScope.launch {
             printerClient.disconnect()

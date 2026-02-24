@@ -58,7 +58,8 @@ fun EPaperScreen(
         onMacAddressChange = viewModel::updateMacAddress,
         onTagSelect = viewModel::selectTag,
         onSend = viewModel::send,
-        onRefreshWeight = viewModel::refreshWeight
+        onRefreshWeight = viewModel::refreshWeight,
+        onSendLogoImage = viewModel::sendLogoImage
     )
 }
 
@@ -75,7 +76,8 @@ private fun EPaperScreenContent(
     onMacAddressChange: (String) -> Unit,
     onTagSelect: (com.example.btlearninglab.data.epaper.EPaperTag) -> Unit,
     onSend: () -> Unit,
-    onRefreshWeight: () -> Unit
+    onRefreshWeight: () -> Unit,
+    onSendLogoImage: () -> Unit
 ) {
     val isSending = uiState is EPaperUiState.Sending
     val httpRequest = if (uiState is EPaperUiState.Sent) uiState.httpRequest else null
@@ -457,6 +459,32 @@ private fun EPaperScreenContent(
                         )
                     }
                 }
+            }
+
+            // Event Logo Button
+            val canSendLogo = apUrl.trim().isNotEmpty() && macAddress.trim().isNotEmpty() && !isSending
+            Button(
+                onClick = onSendLogoImage,
+                enabled = canSendLogo,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 24.dp)
+                    .padding(bottom = 16.dp)
+                    .height(56.dp),
+                shape = RoundedCornerShape(12.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = AppColors.Purple400,
+                    contentColor = Color.White,
+                    disabledContainerColor = AppColors.Gray100,
+                    disabledContentColor = AppColors.Gray400
+                ),
+                elevation = ButtonDefaults.buttonElevation(defaultElevation = 2.dp)
+            ) {
+                Text(
+                    text = if (isSending) "送信中..." else "エルプサイコングルゥ",
+                    fontWeight = FontWeight.SemiBold,
+                    fontSize = 16.sp
+                )
             }
 
             // HTTP Request

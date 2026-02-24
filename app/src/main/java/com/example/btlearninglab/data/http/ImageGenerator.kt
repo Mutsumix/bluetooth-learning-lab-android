@@ -1,6 +1,8 @@
 package com.example.btlearninglab.data.http
 
+import android.content.Context
 import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
@@ -75,6 +77,51 @@ object ImageGenerator {
      *
      * @return ByteArray containing JPEG image data (296x128, quality 95)
      */
+    /**
+     * Generates an image from the logo asset for E-Paper display.
+     * Loads gadget-lab-logo.png from assets, converts to grayscale, and resizes to 296x128.
+     *
+     * @param context Android context for accessing assets
+     * @return ByteArray containing JPEG image data (296x128, quality 95)
+     */
+    fun generateLogoImage(context: Context): ByteArray {
+        val original = context.assets.open("gadget-lab-logo.png").use { stream ->
+            BitmapFactory.decodeStream(stream)
+        }
+
+        // Scale to fit 296x128 maintaining aspect ratio, then center on white background
+        val targetW = 296
+        val targetH = 128
+        val scale = minOf(targetW.toFloat() / original.width, targetH.toFloat() / original.height)
+        val scaledW = (original.width * scale).toInt()
+        val scaledH = (original.height * scale).toInt()
+
+        val scaled = Bitmap.createScaledBitmap(original, scaledW, scaledH, true)
+
+        val bitmap = Bitmap.createBitmap(targetW, targetH, Bitmap.Config.ARGB_8888)
+        val canvas = Canvas(bitmap)
+        canvas.drawColor(Color.WHITE)
+
+        val left = (targetW - scaledW) / 2f
+        val top = (targetH - scaledH) / 2f
+        canvas.drawBitmap(scaled, left, top, Paint().apply { isAntiAlias = true })
+
+        // Convert to grayscale
+        val grayBitmap = Bitmap.createBitmap(targetW, targetH, Bitmap.Config.ARGB_8888)
+        val grayCanvas = Canvas(grayBitmap)
+        val grayPaint = Paint().apply {
+            colorFilter = android.graphics.ColorMatrixColorFilter(
+                android.graphics.ColorMatrix().also { it.setSaturation(0f) }
+            )
+        }
+        grayCanvas.drawBitmap(bitmap, 0f, 0f, grayPaint)
+
+        val outputStream = ByteArrayOutputStream()
+        grayBitmap.compress(Bitmap.CompressFormat.JPEG, 95, outputStream)
+
+        return outputStream.toByteArray()
+    }
+
     @Deprecated("Use generateWeightImage instead")
     fun generateDemoImage(): ByteArray {
         return generateWeightImage(0.0)
