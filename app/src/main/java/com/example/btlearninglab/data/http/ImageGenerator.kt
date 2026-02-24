@@ -106,18 +106,9 @@ object ImageGenerator {
         val top = (targetH - scaledH) / 2f
         canvas.drawBitmap(scaled, left, top, Paint().apply { isAntiAlias = true })
 
-        // Convert to grayscale
-        val grayBitmap = Bitmap.createBitmap(targetW, targetH, Bitmap.Config.ARGB_8888)
-        val grayCanvas = Canvas(grayBitmap)
-        val grayPaint = Paint().apply {
-            colorFilter = android.graphics.ColorMatrixColorFilter(
-                android.graphics.ColorMatrix().also { it.setSaturation(0f) }
-            )
-        }
-        grayCanvas.drawBitmap(bitmap, 0f, 0f, grayPaint)
-
+        // カラーのままJPEG出力（赤インク対応のためグレースケール変換しない）
         val outputStream = ByteArrayOutputStream()
-        grayBitmap.compress(Bitmap.CompressFormat.JPEG, 95, outputStream)
+        bitmap.compress(Bitmap.CompressFormat.JPEG, 95, outputStream)
 
         return outputStream.toByteArray()
     }
