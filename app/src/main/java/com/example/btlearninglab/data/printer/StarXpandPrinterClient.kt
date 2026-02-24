@@ -343,6 +343,7 @@ class StarXpandPrinterClient(private val context: Context) {
             val printWidth = 384
 
             val eventUrl = "https://lenovopro-comunity-gaget-lab.connpass.com/event/380775/"
+            val tweetUrl = "https://twitter.com/intent/tweet?text=%E3%80%90LenovoPro+%E3%82%B3%E3%83%9F%E3%83%A5%E3%83%8B%E3%83%86%E3%82%A3%E3%80%91%E3%82%AC%E3%82%B8%E3%82%A7%E3%83%83%E3%83%88%E7%A0%94%E7%A9%B6%E5%AE%A4%EF%BC%A0%E7%A7%8B%E8%91%89%E5%8E%9F+%E3%81%AB%E5%8F%82%E5%8A%A0%E4%B8%AD%EF%BC%81%23%E3%82%AC%E3%82%B8%E3%82%A7%E3%83%83%E3%83%88%E7%A0%94%E7%A9%B6%E5%AE%A4"
 
             val commands = StarXpandCommandBuilder().apply {
                 addDocument(DocumentBuilder().apply {
@@ -352,6 +353,13 @@ class StarXpandPrinterClient(private val context: Context) {
                         styleAlignment(Alignment.Center)
                         actionPrintQRCode(
                             QRCodeParameter(eventUrl)
+                                .setModel(QRCodeModel.Model2)
+                                .setLevel(QRCodeLevel.M)
+                                .setCellSize(4)
+                        )
+                        actionFeedLine(1)
+                        actionPrintQRCode(
+                            QRCodeParameter(tweetUrl)
                                 .setModel(QRCodeModel.Model2)
                                 .setLevel(QRCodeLevel.M)
                                 .setCellSize(4)
