@@ -130,7 +130,7 @@ class EPaperViewModel(
 
         viewModelScope.launch {
             try {
-                _uiState.value = EPaperUiState.Sending
+                _uiState.value = EPaperUiState.Sending(SendAction.Manual)
                 _logs.value = listOf("> [ViewModel] url='$url', mac='$mac'")
 
                 // Get weight data from repository
@@ -194,7 +194,62 @@ class EPaperViewModel(
     }
 
     fun sendWeight() {
-        send()
+        val url = _apUrl.value.trim()
+        var mac = _macAddress.value.trim()
+
+        if (url.isEmpty() || mac.isEmpty()) {
+            _uiState.value = EPaperUiState.Error("AP URLとMACアドレスを入力してください")
+            return
+        }
+
+        mac = mac.replace(":", "")
+
+        if (_uiState.value is EPaperUiState.Sending) return
+
+        viewModelScope.launch {
+            try {
+                _uiState.value = EPaperUiState.Sending(SendAction.Weight)
+                _logs.value = listOf("> [ViewModel] Sending weight, url='$url', mac='$mac'")
+
+                val weight = weightRepository.getLatestWeight()
+                val currentDate = Date()
+                val imageData = ImageGenerator.generateWeightImage(weight, currentDate)
+
+                val apIp = url.replace("http://", "").replace("https://", "").split("/").first()
+                val result = httpClient.uploadImage(apIp, mac, imageData)
+
+                val fullUrl = if (url.startsWith("http://") || url.startsWith("https://")) url else "http://$url"
+
+                result.fold(
+                    onSuccess = { responseText ->
+                        val httpRequest = listOf(
+                            "POST $fullUrl/imgupload",
+                            "Content-Type: multipart/form-data",
+                            "file: image.jpg (296x128)",
+                            "mac: $mac",
+                            "---",
+                            "Response: $responseText"
+                        )
+                        _uiState.value = EPaperUiState.Sent(httpRequest = httpRequest)
+                        saveCurrentTag()
+                        delay(3000)
+                        if (_uiState.value is EPaperUiState.Sent) {
+                            _uiState.value = EPaperUiState.Idle
+                        }
+                    },
+                    onFailure = { error ->
+                        _uiState.value = EPaperUiState.Error(error.message ?: "送信に失敗しました")
+                        delay(2000)
+                        _uiState.value = EPaperUiState.Idle
+                    }
+                )
+            } catch (e: Exception) {
+                _logs.value = _logs.value + "> Exception: ${e.message}"
+                _uiState.value = EPaperUiState.Error(e.message ?: "Unknown error")
+                delay(2000)
+                _uiState.value = EPaperUiState.Idle
+            }
+        }
     }
 
     fun sendLogoImage() {
@@ -212,7 +267,7 @@ class EPaperViewModel(
 
         viewModelScope.launch {
             try {
-                _uiState.value = EPaperUiState.Sending
+                _uiState.value = EPaperUiState.Sending(SendAction.Logo)
                 _logs.value = listOf("> [ViewModel] Sending logo image, url='$url', mac='$mac'")
 
                 val imageData = withContext(Dispatchers.IO) {

@@ -81,7 +81,11 @@ private fun EPaperScreenContent(
     onSendWeight: () -> Unit,
     onSendLogoImage: () -> Unit
 ) {
-    val isSending = uiState is EPaperUiState.Sending
+    val sendingAction = (uiState as? EPaperUiState.Sending)?.action
+    val isSending = sendingAction != null
+    val isSendingManual = sendingAction == SendAction.Manual
+    val isSendingWeight = sendingAction == SendAction.Weight
+    val isSendingLogo = sendingAction == SendAction.Logo
     val httpRequest = if (uiState is EPaperUiState.Sent) uiState.httpRequest else null
     val errorMessage = if (uiState is EPaperUiState.Error) uiState.message else null
     val focusManager = LocalFocusManager.current
@@ -438,7 +442,7 @@ private fun EPaperScreenContent(
                 ),
                 elevation = ButtonDefaults.buttonElevation(defaultElevation = 2.dp)
             ) {
-                if (isSending) {
+                if (isSendingManual) {
                     Text(
                         text = "送信中...",
                         fontWeight = FontWeight.SemiBold,
@@ -483,7 +487,7 @@ private fun EPaperScreenContent(
                 elevation = ButtonDefaults.buttonElevation(defaultElevation = 2.dp)
             ) {
                 Text(
-                    text = if (isSending) "送信中..." else "重量を表示",
+                    text = if (isSendingWeight) "送信中..." else "重量を表示",
                     fontWeight = FontWeight.SemiBold,
                     fontSize = 16.sp
                 )
@@ -509,7 +513,7 @@ private fun EPaperScreenContent(
                 elevation = ButtonDefaults.buttonElevation(defaultElevation = 2.dp)
             ) {
                 Text(
-                    text = if (isSending) "送信中..." else "エルプサイコングルゥ",
+                    text = if (isSendingLogo) "送信中..." else "エルプサイコングルゥ",
                     fontWeight = FontWeight.SemiBold,
                     fontSize = 16.sp
                 )
