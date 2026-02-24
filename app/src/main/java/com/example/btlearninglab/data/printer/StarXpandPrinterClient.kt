@@ -358,6 +358,7 @@ class StarXpandPrinterClient(private val context: Context) {
                                 .setLevel(QRCodeLevel.M)
                                 .setCellSize(4)
                         )
+                        actionFeedLine(1)
                         actionPrintText("▲[QR: connpassページ]\n")
                         actionFeedLine(1)
                         actionPrintQRCode(
@@ -366,6 +367,7 @@ class StarXpandPrinterClient(private val context: Context) {
                                 .setLevel(QRCodeLevel.M)
                                 .setCellSize(4)
                         )
+                        actionFeedLine(1)
                         actionPrintText("▲[QR: Xでポスト]\n")
                         actionFeedLine(1)
                         actionCut(CutType.Partial)
