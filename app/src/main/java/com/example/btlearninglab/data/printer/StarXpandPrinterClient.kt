@@ -348,15 +348,17 @@ class StarXpandPrinterClient(private val context: Context) {
             val commands = StarXpandCommandBuilder().apply {
                 addDocument(DocumentBuilder().apply {
                     addPrinter(PrinterBuilder().apply {
+                        styleSecondPriorityCharacterEncoding(CharacterEncodingType.Japanese)
+                        styleAlignment(Alignment.Center)
                         actionPrintImage(ImageParameter(bitmap, printWidth))
                         actionFeedLine(1)
-                        styleAlignment(Alignment.Center)
                         actionPrintQRCode(
                             QRCodeParameter(eventUrl)
                                 .setModel(QRCodeModel.Model2)
                                 .setLevel(QRCodeLevel.M)
                                 .setCellSize(4)
                         )
+                        actionPrintText("▲[QR: connpassページ]\n")
                         actionFeedLine(1)
                         actionPrintQRCode(
                             QRCodeParameter(tweetUrl)
@@ -364,6 +366,7 @@ class StarXpandPrinterClient(private val context: Context) {
                                 .setLevel(QRCodeLevel.M)
                                 .setCellSize(4)
                         )
+                        actionPrintText("▲[QR: Xでポスト]\n")
                         actionFeedLine(1)
                         actionCut(CutType.Partial)
                     })
