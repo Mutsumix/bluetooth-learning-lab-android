@@ -58,6 +58,7 @@ fun PrinterScreen(
         onConnect = viewModel::connect,
         onDisconnect = viewModel::disconnect,
         onPrint = viewModel::print,
+        onPrintWeight = viewModel::printWeight,
         onPrintImage = viewModel::printImage
     )
 }
@@ -78,6 +79,7 @@ private fun PrinterScreenContent(
     onConnect: () -> Unit,
     onDisconnect: () -> Unit,
     onPrint: () -> Unit,
+    onPrintWeight: () -> Unit,
     onPrintImage: () -> Unit
 ) {
     val isConnected = uiState is PrinterUiState.Connected
@@ -356,6 +358,41 @@ private fun PrinterScreenContent(
                             fontSize = 16.sp
                         )
                     }
+                }
+            }
+
+            // Weight Print Button
+            Button(
+                onClick = onPrintWeight,
+                enabled = isConnected && !isPrinting,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 24.dp)
+                    .padding(bottom = 12.dp)
+                    .height(56.dp),
+                shape = RoundedCornerShape(12.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = AppColors.Primary400,
+                    contentColor = Color.White,
+                    disabledContainerColor = AppColors.Gray200,
+                    disabledContentColor = AppColors.Gray400
+                ),
+                elevation = ButtonDefaults.buttonElevation(defaultElevation = 2.dp)
+            ) {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.ic_printer),
+                        contentDescription = "Print Weight",
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Text(
+                        text = "重量を印刷",
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 16.sp
+                    )
                 }
             }
 

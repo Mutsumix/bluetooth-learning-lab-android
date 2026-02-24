@@ -193,6 +193,10 @@ class EPaperViewModel(
         }
     }
 
+    fun sendWeight() {
+        send()
+    }
+
     fun sendLogoImage() {
         val url = _apUrl.value.trim()
         var mac = _macAddress.value.trim()

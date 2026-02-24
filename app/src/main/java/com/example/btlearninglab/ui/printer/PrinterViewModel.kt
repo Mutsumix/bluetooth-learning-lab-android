@@ -6,6 +6,7 @@ import com.example.btlearninglab.data.printer.PrinterConnectionState
 import com.example.btlearninglab.data.printer.PrinterDeviceRepository
 import com.example.btlearninglab.data.printer.ScannedPrinter
 import com.example.btlearninglab.data.printer.StarXpandPrinterClient
+import com.example.btlearninglab.data.scale.WeightRepository
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -14,7 +15,8 @@ import kotlinx.coroutines.launch
 
 class PrinterViewModel(
     private val printerClient: StarXpandPrinterClient,
-    private val deviceRepository: PrinterDeviceRepository
+    private val deviceRepository: PrinterDeviceRepository,
+    private val weightRepository: WeightRepository
 ) : ViewModel() {
     private val _uiState = MutableStateFlow<PrinterUiState>(PrinterUiState.Disconnected)
     val uiState: StateFlow<PrinterUiState> = _uiState.asStateFlow()
@@ -95,6 +97,22 @@ class PrinterViewModel(
                 printerClient.discoverAndConnect()
             } catch (e: Exception) {
                 _logs.value = _logs.value + "> Error: ${e.message}"
+                _uiState.value = PrinterUiState.Error(message = e.message ?: "Unknown error")
+            }
+        }
+    }
+
+    fun printWeight() {
+        if (_uiState.value !is PrinterUiState.Connected) return
+
+        viewModelScope.launch {
+            try {
+                _uiState.value = PrinterUiState.Printing
+                val weight = weightRepository.getLatestWeight()
+                val weightText = String.format(java.util.Locale.JAPAN, "%.1f g", weight)
+                printerClient.print(weightText)
+            } catch (e: Exception) {
+                _logs.value = _logs.value + "> Print Weight Error: ${e.message}"
                 _uiState.value = PrinterUiState.Error(message = e.message ?: "Unknown error")
             }
         }
