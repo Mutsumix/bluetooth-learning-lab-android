@@ -1,6 +1,6 @@
 package com.example.btlearninglab.ui.epaper
 
-enum class SendAction { Manual, Weight, Logo }
+enum class SendAction { Weight, Logo, Reset }
 
 sealed interface EPaperUiState {
     object Idle : EPaperUiState

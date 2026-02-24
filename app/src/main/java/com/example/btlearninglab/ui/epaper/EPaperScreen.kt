@@ -57,10 +57,10 @@ fun EPaperScreen(
         onApUrlChange = viewModel::updateApUrl,
         onMacAddressChange = viewModel::updateMacAddress,
         onTagSelect = viewModel::selectTag,
-        onSend = viewModel::send,
         onRefreshWeight = viewModel::refreshWeight,
         onSendWeight = viewModel::sendWeight,
-        onSendLogoImage = viewModel::sendLogoImage
+        onSendLogoImage = viewModel::sendLogoImage,
+        onReset = viewModel::sendReset
     )
 }
 
@@ -76,16 +76,16 @@ private fun EPaperScreenContent(
     onApUrlChange: (String) -> Unit,
     onMacAddressChange: (String) -> Unit,
     onTagSelect: (com.example.btlearninglab.data.epaper.EPaperTag) -> Unit,
-    onSend: () -> Unit,
     onRefreshWeight: () -> Unit,
     onSendWeight: () -> Unit,
-    onSendLogoImage: () -> Unit
+    onSendLogoImage: () -> Unit,
+    onReset: () -> Unit
 ) {
     val sendingAction = (uiState as? EPaperUiState.Sending)?.action
     val isSending = sendingAction != null
-    val isSendingManual = sendingAction == SendAction.Manual
     val isSendingWeight = sendingAction == SendAction.Weight
     val isSendingLogo = sendingAction == SendAction.Logo
+    val isSendingReset = sendingAction == SendAction.Reset
     val httpRequest = if (uiState is EPaperUiState.Sent) uiState.httpRequest else null
     val errorMessage = if (uiState is EPaperUiState.Error) uiState.message else null
     val focusManager = LocalFocusManager.current
@@ -416,55 +416,29 @@ private fun EPaperScreenContent(
                 }
             }
 
-            // Send Button
-            val canSend = apUrl.trim().isNotEmpty() && macAddress.trim().isNotEmpty() && !isSending
+            // Reset Button
+            val canReset = apUrl.trim().isNotEmpty() && macAddress.trim().isNotEmpty() && !isSending
             Button(
-                onClick = {
-                    if (!isSending) {
-                        onSend()
-                    }
-                },
-                enabled = canSend,
+                onClick = onReset,
+                enabled = canReset,
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 24.dp, vertical = 24.dp)
                     .height(56.dp),
                 shape = RoundedCornerShape(12.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = if (canSend)
-                        AppColors.Primary400
-                    else AppColors.Gray100,
-                    contentColor = if (canSend)
-                        Color.White
-                    else AppColors.Gray400,
+                    containerColor = AppColors.Gray600,
+                    contentColor = Color.White,
                     disabledContainerColor = AppColors.Gray100,
                     disabledContentColor = AppColors.Gray400
                 ),
                 elevation = ButtonDefaults.buttonElevation(defaultElevation = 2.dp)
             ) {
-                if (isSendingManual) {
-                    Text(
-                        text = "送信中...",
-                        fontWeight = FontWeight.SemiBold,
-                        fontSize = 16.sp
-                    )
-                } else {
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(
-                            painter = painterResource(id = R.drawable.ic_send),
-                            contentDescription = "Send",
-                            modifier = Modifier.size(20.dp)
-                        )
-                        Text(
-                            text = "送信",
-                            fontWeight = FontWeight.SemiBold,
-                            fontSize = 16.sp
-                        )
-                    }
-                }
+                Text(
+                    text = if (isSendingReset) "送信中..." else "リセット",
+                    fontWeight = FontWeight.SemiBold,
+                    fontSize = 16.sp
+                )
             }
 
             // Weight Display Button

@@ -113,6 +113,19 @@ object ImageGenerator {
         return outputStream.toByteArray()
     }
 
+    /**
+     * Generates a blank white image for resetting the E-Paper display.
+     *
+     * @return ByteArray containing JPEG image data (296x128, quality 95)
+     */
+    fun generateWhiteImage(): ByteArray {
+        val bitmap = Bitmap.createBitmap(296, 128, Bitmap.Config.ARGB_8888)
+        Canvas(bitmap).drawColor(Color.WHITE)
+        val outputStream = ByteArrayOutputStream()
+        bitmap.compress(Bitmap.CompressFormat.JPEG, 95, outputStream)
+        return outputStream.toByteArray()
+    }
+
     @Deprecated("Use generateWeightImage instead")
     fun generateDemoImage(): ByteArray {
         return generateWeightImage(0.0)

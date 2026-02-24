@@ -130,7 +130,7 @@ class EPaperViewModel(
 
         viewModelScope.launch {
             try {
-                _uiState.value = EPaperUiState.Sending(SendAction.Manual)
+                _uiState.value = EPaperUiState.Sending(SendAction.Weight)
                 _logs.value = listOf("> [ViewModel] url='$url', mac='$mac'")
 
                 // Get weight data from repository
@@ -236,6 +236,49 @@ class EPaperViewModel(
                         if (_uiState.value is EPaperUiState.Sent) {
                             _uiState.value = EPaperUiState.Idle
                         }
+                    },
+                    onFailure = { error ->
+                        _uiState.value = EPaperUiState.Error(error.message ?: "送信に失敗しました")
+                        delay(2000)
+                        _uiState.value = EPaperUiState.Idle
+                    }
+                )
+            } catch (e: Exception) {
+                _logs.value = _logs.value + "> Exception: ${e.message}"
+                _uiState.value = EPaperUiState.Error(e.message ?: "Unknown error")
+                delay(2000)
+                _uiState.value = EPaperUiState.Idle
+            }
+        }
+    }
+
+    fun sendReset() {
+        val url = _apUrl.value.trim()
+        var mac = _macAddress.value.trim()
+
+        if (url.isEmpty() || mac.isEmpty()) {
+            _uiState.value = EPaperUiState.Error("AP URLとMACアドレスを入力してください")
+            return
+        }
+
+        mac = mac.replace(":", "")
+
+        if (_uiState.value is EPaperUiState.Sending) return
+
+        viewModelScope.launch {
+            try {
+                _uiState.value = EPaperUiState.Sending(SendAction.Reset)
+                _logs.value = listOf("> [ViewModel] Sending white image (reset), mac='$mac'")
+
+                val imageData = ImageGenerator.generateWhiteImage()
+                val apIp = url.replace("http://", "").replace("https://", "").split("/").first()
+                val result = httpClient.uploadImage(apIp, mac, imageData)
+
+                result.fold(
+                    onSuccess = {
+                        _uiState.value = EPaperUiState.Sent(httpRequest = listOf("Reset: white image sent"))
+                        delay(2000)
+                        if (_uiState.value is EPaperUiState.Sent) _uiState.value = EPaperUiState.Idle
                     },
                     onFailure = { error ->
                         _uiState.value = EPaperUiState.Error(error.message ?: "送信に失敗しました")
