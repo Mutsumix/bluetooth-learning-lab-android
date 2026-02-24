@@ -75,6 +75,9 @@ dependencies {
     // StarXpand SDK
     implementation("com.starmicronics:stario10:1.7.0")
 
+    // QR Code generation
+    implementation("com.google.zxing:core:3.5.2")
+
     // HTTP Client
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
 

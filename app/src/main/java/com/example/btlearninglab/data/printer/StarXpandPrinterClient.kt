@@ -1,8 +1,16 @@
 package com.example.btlearninglab.data.printer
 
 import android.content.Context
+import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.graphics.Canvas
+import android.graphics.Color
+import android.graphics.Paint
 import android.util.Log
+import com.google.zxing.BarcodeFormat
+import com.google.zxing.EncodeHintType
+import com.google.zxing.qrcode.QRCodeWriter
+import com.google.zxing.qrcode.decoder.ErrorCorrectionLevel
 import com.starmicronics.stario10.*
 import com.starmicronics.stario10.starxpandcommand.*
 import com.starmicronics.stario10.starxpandcommand.DocumentBuilder
@@ -345,6 +353,10 @@ class StarXpandPrinterClient(private val context: Context) {
             val eventUrl = "https://lenovopro-comunity-gaget-lab.connpass.com/event/380775/"
             val tweetUrl = "https://twitter.com/intent/tweet?text=%E3%80%90LenovoPro+%E3%82%B3%E3%83%9F%E3%83%A5%E3%83%8B%E3%83%86%E3%82%A3%E3%80%91%E3%82%AC%E3%82%B8%E3%82%A7%E3%83%83%E3%83%88%E7%A0%94%E7%A9%B6%E5%AE%A4%EF%BC%A0%E7%A7%8B%E8%91%89%E5%8E%9F+%E3%81%AB%E5%8F%82%E5%8A%A0%E4%B8%AD%EF%BC%81%23%E3%82%AC%E3%82%B8%E3%82%A7%E3%83%83%E3%83%88%E7%A0%94%E7%A9%B6%E5%AE%A4"
 
+            val qrSize = 160 // ドット数（384幅に対して中央配置）
+            val qrConnpass = generateCenteredQrBitmap(eventUrl, qrSize, printWidth)
+            val qrTweet = generateCenteredQrBitmap(tweetUrl, qrSize, printWidth)
+
             val commands = StarXpandCommandBuilder().apply {
                 addDocument(DocumentBuilder().apply {
                     addPrinter(PrinterBuilder().apply {
@@ -352,22 +364,10 @@ class StarXpandPrinterClient(private val context: Context) {
                         styleAlignment(Alignment.Center)
                         actionPrintImage(ImageParameter(bitmap, printWidth))
                         actionFeedLine(1)
-                        actionPrintQRCode(
-                            QRCodeParameter(eventUrl)
-                                .setModel(QRCodeModel.Model2)
-                                .setLevel(QRCodeLevel.M)
-                                .setCellSize(4)
-                        )
-                        actionFeedLine(1)
+                        actionPrintImage(ImageParameter(qrConnpass, printWidth))
                         actionPrintText("▲[QR: connpassページ]\n")
                         actionFeedLine(1)
-                        actionPrintQRCode(
-                            QRCodeParameter(tweetUrl)
-                                .setModel(QRCodeModel.Model2)
-                                .setLevel(QRCodeLevel.M)
-                                .setCellSize(4)
-                        )
-                        actionFeedLine(1)
+                        actionPrintImage(ImageParameter(qrTweet, printWidth))
                         actionPrintText("▲[QR: Xでポスト]\n")
                         actionFeedLine(1)
                         actionCut(CutType.Partial)
@@ -427,6 +427,31 @@ class StarXpandPrinterClient(private val context: Context) {
 
         _connectionState.value = PrinterConnectionState.Error(errorMessage)
         addLog("> StarIO10 Error: $errorMessage")
+    }
+
+    /**
+     * ZXingでQRコードをBitmapとして生成し、printWidth幅に中央配置したBitmapを返す
+     */
+    private fun generateCenteredQrBitmap(content: String, qrSize: Int, printWidth: Int): Bitmap {
+        val hints = mapOf(
+            EncodeHintType.ERROR_CORRECTION to ErrorCorrectionLevel.M,
+            EncodeHintType.MARGIN to 1
+        )
+        val matrix = QRCodeWriter().encode(content, BarcodeFormat.QR_CODE, qrSize, qrSize, hints)
+
+        val qrBitmap = Bitmap.createBitmap(qrSize, qrSize, Bitmap.Config.RGB_565)
+        for (x in 0 until qrSize) {
+            for (y in 0 until qrSize) {
+                qrBitmap.setPixel(x, y, if (matrix[x, y]) Color.BLACK else Color.WHITE)
+            }
+        }
+
+        val result = Bitmap.createBitmap(printWidth, qrSize, Bitmap.Config.RGB_565)
+        val canvas = Canvas(result)
+        canvas.drawColor(Color.WHITE)
+        val left = (printWidth - qrSize) / 2f
+        canvas.drawBitmap(qrBitmap, left, 0f, Paint())
+        return result
     }
 
     private fun addLog(message: String) {
