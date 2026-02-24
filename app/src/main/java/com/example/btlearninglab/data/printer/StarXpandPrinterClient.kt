@@ -342,10 +342,21 @@ class StarXpandPrinterClient(private val context: Context) {
             // SM-S210iの印刷幅: 384ドット（2インチ感熱紙）
             val printWidth = 384
 
+            val eventUrl = "https://lenovopro-comunity-gaget-lab.connpass.com/event/380775/"
+
             val commands = StarXpandCommandBuilder().apply {
                 addDocument(DocumentBuilder().apply {
                     addPrinter(PrinterBuilder().apply {
                         actionPrintImage(ImageParameter(bitmap, printWidth))
+                        actionFeedLine(1)
+                        styleAlignment(Alignment.Center)
+                        actionPrintQRCode(
+                            QRCodeParameter(eventUrl)
+                                .setModel(QRCodeModel.Model2)
+                                .setLevel(QRCodeLevel.M)
+                                .setCellSize(4)
+                        )
+                        actionFeedLine(1)
                         actionCut(CutType.Partial)
                     })
                 })
