@@ -31,9 +31,21 @@ class BluetoothManager(private val context: Context) {
     private val _scannedDevices = MutableStateFlow<List<ScannedDevice>>(emptyList())
     val scannedDevices: StateFlow<List<ScannedDevice>> = _scannedDevices.asStateFlow()
 
+    private val _logs = MutableStateFlow<List<String>>(emptyList())
+    val logs: StateFlow<List<String>> = _logs.asStateFlow()
+
     private val scannedDeviceMap = mutableMapOf<String, ScannedDevice>()
     private val scanScope = CoroutineScope(Dispatchers.Default)
     private var scanTimeoutJob: Job? = null
+
+    private fun timestamp(): String {
+        val sdf = java.text.SimpleDateFormat("HH:mm:ss.SSS", java.util.Locale.US)
+        return sdf.format(java.util.Date())
+    }
+
+    private fun addLog(tag: String, message: String) {
+        _logs.value = _logs.value + "[${timestamp()}][$tag] $message"
+    }
 
     private val scanCallback = object : ScanCallback() {
         @SuppressLint("MissingPermission")
@@ -41,6 +53,8 @@ class BluetoothManager(private val context: Context) {
             val device = result.device
             val rssi = result.rssi
             val name = device.name ?: "Unknown"
+
+            addLog("SCAN", "Found: $name (${device.address}) RSSI=${rssi}dBm")
 
             val scannedDevice = ScannedDevice(
                 name = name,
@@ -59,6 +73,7 @@ class BluetoothManager(private val context: Context) {
         }
 
         override fun onScanFailed(errorCode: Int) {
+            addLog("SCAN", "Failed: error code $errorCode")
             _scanState.value = BleConnectionState.Error("Scan failed with error code: $errorCode")
             scanTimeoutJob?.cancel()
         }
@@ -83,6 +98,7 @@ class BluetoothManager(private val context: Context) {
 
         scannedDeviceMap.clear()
         _scannedDevices.value = emptyList()
+        _logs.value = emptyList()
         scanTimeoutJob?.cancel()
 
         val scanFilter = ScanFilter.Builder()
@@ -92,6 +108,8 @@ class BluetoothManager(private val context: Context) {
         val scanSettings = ScanSettings.Builder()
             .setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY)
             .build()
+
+        addLog("SCAN", "Starting BLE scan (filter: \"Decent Scale\")")
 
         bluetoothLeScanner.startScan(
             listOf(scanFilter),
@@ -111,6 +129,7 @@ class BluetoothManager(private val context: Context) {
     fun stopScan() {
         bluetoothLeScanner?.stopScan(scanCallback)
         scanTimeoutJob?.cancel()
+        addLog("SCAN", "Scan stopped")
     }
 
     fun getDeviceByAddress(address: String) = bluetoothAdapter?.getRemoteDevice(address)

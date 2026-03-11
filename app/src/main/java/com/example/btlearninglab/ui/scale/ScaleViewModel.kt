@@ -198,8 +198,15 @@ class ScaleViewModel(
 
     private fun observeBleClientLogs() {
         viewModelScope.launch {
-            bleClient.logs.collect { logs ->
-                _logs.value = logs
+            bleClient.logs.collect { clientLogs ->
+                val scanLogs = bluetoothManager.logs.value
+                _logs.value = scanLogs + clientLogs
+            }
+        }
+        viewModelScope.launch {
+            bluetoothManager.logs.collect { scanLogs ->
+                val clientLogs = bleClient.logs.value
+                _logs.value = scanLogs + clientLogs
             }
         }
     }

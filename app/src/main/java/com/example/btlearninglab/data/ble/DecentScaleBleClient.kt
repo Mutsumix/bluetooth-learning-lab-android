@@ -32,18 +32,32 @@ class DecentScaleBleClient(private val context: Context) {
         private val CCCD_UUID: UUID = UUID.fromString("00002902-0000-1000-8000-00805F9B34FB")
     }
 
+    private fun timestamp(): String {
+        val sdf = java.text.SimpleDateFormat("HH:mm:ss.SSS", java.util.Locale.US)
+        return sdf.format(java.util.Date())
+    }
+
+    private fun addLog(tag: String, message: String) {
+        _logs.value = _logs.value + "[${timestamp()}][$tag] $message"
+    }
+
+    private fun shortUuid(uuid: UUID): String {
+        val hex = uuid.toString().substring(4, 8).uppercase()
+        return hex
+    }
+
     private val gattCallback = object : BluetoothGattCallback() {
         @SuppressLint("MissingPermission")
         override fun onConnectionStateChange(gatt: BluetoothGatt, status: Int, newState: Int) {
             when (newState) {
                 BluetoothProfile.STATE_CONNECTED -> {
-                    addLog("> GATT Connected")
+                    addLog("GATT", "Connected (status=$status)")
                     _connectionState.value = BleConnectionState.Connected
-                    addLog("> Discovering services...")
+                    addLog("GATT", "Discovering services...")
                     gatt.discoverServices()
                 }
                 BluetoothProfile.STATE_DISCONNECTED -> {
-                    addLog("> Disconnected")
+                    addLog("GATT", "Disconnected (status=$status)")
                     _connectionState.value = BleConnectionState.Idle
                     _weightData.value = null
                 }
@@ -53,10 +67,25 @@ class DecentScaleBleClient(private val context: Context) {
         @SuppressLint("MissingPermission")
         override fun onServicesDiscovered(gatt: BluetoothGatt, status: Int) {
             if (status == BluetoothGatt.GATT_SUCCESS) {
-                addLog("> Services discovered: ${gatt.services.size}")
+                addLog("GATT", "Services discovered: ${gatt.services.size} service(s)")
+                for (service in gatt.services) {
+                    val sUuid = shortUuid(service.uuid)
+                    val chars = service.characteristics
+                    addLog("GATT", "  Service: $sUuid (${chars.size} characteristic(s))")
+                    for (char in chars) {
+                        val cUuid = shortUuid(char.uuid)
+                        val props = mutableListOf<String>()
+                        if (char.properties and BluetoothGattCharacteristic.PROPERTY_READ != 0) props.add("Read")
+                        if (char.properties and BluetoothGattCharacteristic.PROPERTY_WRITE != 0) props.add("Write")
+                        if (char.properties and BluetoothGattCharacteristic.PROPERTY_WRITE_NO_RESPONSE != 0) props.add("WriteNoResp")
+                        if (char.properties and BluetoothGattCharacteristic.PROPERTY_NOTIFY != 0) props.add("Notify")
+                        if (char.properties and BluetoothGattCharacteristic.PROPERTY_INDICATE != 0) props.add("Indicate")
+                        addLog("GATT", "    └ $cUuid [${props.joinToString(", ")}]")
+                    }
+                }
                 setupNotifications(gatt)
             } else {
-                addLog("> Service discovery failed: $status")
+                addLog("GATT", "Service discovery failed (status=$status)")
                 _connectionState.value = BleConnectionState.Error("Service discovery failed")
             }
         }
@@ -68,10 +97,10 @@ class DecentScaleBleClient(private val context: Context) {
             status: Int
         ) {
             if (status == BluetoothGatt.GATT_SUCCESS) {
-                addLog("> Notification enabled")
-                addLog("> Receiving data at 10Hz")
+                addLog("NOTIFY", "Enabled on ${shortUuid(descriptor.characteristic.uuid)} (CCCD=0x0001)")
+                addLog("NOTIFY", "Receiving weight data at ~10Hz")
             } else {
-                addLog("> Failed to enable notification: $status")
+                addLog("NOTIFY", "Failed to enable (status=$status)")
                 _connectionState.value = BleConnectionState.Error("Failed to enable notifications")
             }
         }
@@ -86,9 +115,10 @@ class DecentScaleBleClient(private val context: Context) {
                 try {
                     val parsedData = DecentScaleDataParser.parse(data)
                     _weightData.value = parsedData
-                    addLog("> RX: ${parsedData.rawHex} → ${parsedData.weight}g")
+                    val stability = if (parsedData.isStable) "stable" else "unstable"
+                    addLog("NOTIFY", "RX: ${parsedData.rawHex} → ${parsedData.weight}g ($stability)")
                 } catch (e: Exception) {
-                    addLog("> Parse error: ${e.message}")
+                    addLog("NOTIFY", "Parse error: ${e.message}")
                 }
             }
         }
@@ -100,17 +130,16 @@ class DecentScaleBleClient(private val context: Context) {
             status: Int
         ) {
             if (status == BluetoothGatt.GATT_SUCCESS) {
-                addLog("> Tare command sent")
-                addLog("> Weight reset to 0.0g")
+                addLog("WRITE", "Success on ${shortUuid(characteristic.uuid)}")
             } else {
-                addLog("> Write failed: $status")
+                addLog("WRITE", "Failed (status=$status)")
             }
         }
     }
 
     @SuppressLint("MissingPermission")
     fun connect(device: BluetoothDevice) {
-        addLog("> Connecting to ${device.address}...")
+        addLog("GATT", "Connecting to ${device.address} (transport=LE)...")
         _connectionState.value = BleConnectionState.Connecting
 
         bluetoothGatt = device.connectGatt(
@@ -125,28 +154,29 @@ class DecentScaleBleClient(private val context: Context) {
     private fun setupNotifications(gatt: BluetoothGatt) {
         val service = gatt.getService(SERVICE_UUID)
         if (service == null) {
-            addLog("> Service FFF0 not found")
+            addLog("GATT", "Service ${shortUuid(SERVICE_UUID)} not found")
             _connectionState.value = BleConnectionState.Error("Service not found")
             return
         }
 
         val characteristic = service.getCharacteristic(NOTIFY_UUID)
         if (characteristic == null) {
-            addLog("> Characteristic FFF4 not found")
+            addLog("GATT", "Characteristic ${shortUuid(NOTIFY_UUID)} not found")
             _connectionState.value = BleConnectionState.Error("Characteristic not found")
             return
         }
 
-        addLog("> Subscribing to FFF4...")
+        addLog("NOTIFY", "Subscribing to ${shortUuid(NOTIFY_UUID)}...")
         gatt.setCharacteristicNotification(characteristic, true)
 
         val descriptor = characteristic.getDescriptor(CCCD_UUID)
         if (descriptor == null) {
-            addLog("> CCCD descriptor not found")
+            addLog("NOTIFY", "CCCD descriptor (2902) not found")
             _connectionState.value = BleConnectionState.Error("Descriptor not found")
             return
         }
 
+        addLog("NOTIFY", "Writing CCCD descriptor (0x0001 = ENABLE_NOTIFICATION)")
         descriptor.value = BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE
         gatt.writeDescriptor(descriptor)
     }
@@ -155,7 +185,7 @@ class DecentScaleBleClient(private val context: Context) {
     fun sendTare() {
         val gatt = bluetoothGatt
         if (gatt == null) {
-            addLog("> Not connected")
+            addLog("WRITE", "Not connected")
             return
         }
 
@@ -163,14 +193,14 @@ class DecentScaleBleClient(private val context: Context) {
         val characteristic = service?.getCharacteristic(WRITE_UUID)
 
         if (characteristic == null) {
-            addLog("> Write characteristic not found")
+            addLog("WRITE", "Characteristic ${shortUuid(WRITE_UUID)} not found")
             return
         }
 
         val tareCommand = byteArrayOf(0x03, 0x0F, 0x00, 0x00, 0x00, 0x01, 0x0E)
         val hexString = tareCommand.joinToString(" ") { "%02X".format(it) }
 
-        addLog("> Sending Tare: $hexString")
+        addLog("WRITE", "TX: $hexString → ${shortUuid(WRITE_UUID)} (Tare)")
 
         characteristic.value = tareCommand
         characteristic.writeType = BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT
@@ -179,14 +209,11 @@ class DecentScaleBleClient(private val context: Context) {
 
     @SuppressLint("MissingPermission")
     fun disconnect() {
+        addLog("GATT", "Disconnecting...")
         bluetoothGatt?.disconnect()
         bluetoothGatt?.close()
         bluetoothGatt = null
         _connectionState.value = BleConnectionState.Idle
         _weightData.value = null
-    }
-
-    private fun addLog(message: String) {
-        _logs.value = _logs.value + message
     }
 }
