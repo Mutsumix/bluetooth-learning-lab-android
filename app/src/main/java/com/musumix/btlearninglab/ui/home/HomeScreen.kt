@@ -1,0 +1,244 @@
+package com.musumix.btlearninglab.ui.home
+
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavController
+import com.musumix.btlearninglab.R
+import com.musumix.btlearninglab.navigation.Screen
+import com.musumix.btlearninglab.ui.theme.AppColors
+import com.musumix.btlearninglab.ui.components.BottomNavigationBar
+
+@Composable
+fun HomeScreen(
+    navController: NavController,
+    viewModel: HomeViewModel = viewModel()
+) {
+    val uiState by viewModel.uiState.collectAsState()
+
+    HomeScreenContent(
+        navController = navController,
+        uiState = uiState
+    )
+}
+
+@Composable
+private fun HomeScreenContent(
+    navController: NavController,
+    uiState: HomeUiState
+) {
+    val devices = remember {
+        listOf(
+            DeviceInfo(
+                id = "scale",
+                name = "Decent Scale",
+                type = "BLE · 重量取得",
+                backgroundColor = AppColors.PastelMint.copy(alpha = 0.3f),
+                borderColor = AppColors.PastelMint,
+                iconColor = AppColors.ScaleIcon,
+                route = Screen.Scale.route
+            ),
+            DeviceInfo(
+                id = "printer",
+                name = "SM-S210i Printer",
+                type = "Bluetooth Classic · 印刷",
+                backgroundColor = AppColors.PastelPeach.copy(alpha = 0.3f),
+                borderColor = AppColors.PastelPeach,
+                iconColor = AppColors.PrinterIcon,
+                route = Screen.Printer.route
+            ),
+            DeviceInfo(
+                id = "epaper",
+                name = "Gicisky E-Paper",
+                type = "HTTP → ESP32 AP → BLE",
+                backgroundColor = AppColors.PastelLavender.copy(alpha = 0.3f),
+                borderColor = AppColors.PastelLavender,
+                iconColor = AppColors.EPaperIcon,
+                route = Screen.EPaper.route
+            )
+        )
+    }
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(
+                brush = Brush.verticalGradient(
+                    colors = listOf(AppColors.Primary50, Color.White)
+                )
+            )
+    ) {
+        Column(
+            modifier = Modifier.fillMaxSize()
+        ) {
+            Column(
+                modifier = Modifier.weight(1f)
+            ) {
+            // Header
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                color = Color.White.copy(alpha = 0.8f),
+                shadowElevation = 1.dp
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 24.dp, vertical = 20.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(40.dp)
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(
+                                brush = Brush.linearGradient(
+                                    colors = listOf(AppColors.Primary400, AppColors.Primary500)
+                                )
+                            ),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.ic_bluetooth),
+                            contentDescription = "Bluetooth",
+                            modifier = Modifier.size(24.dp),
+                            tint = Color.White
+                        )
+                    }
+                    Text(
+                        text = "BT Learning Lab",
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = AppColors.Gray800
+                    )
+                }
+            }
+
+            // Device Cards
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 24.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                devices.forEach { device ->
+                    DeviceCard(
+                        device = device,
+                        onClick = {
+                            navController.navigate(device.route) {
+                                popUpTo(navController.graph.startDestinationId) {
+                                    saveState = true
+                                }
+                                launchSingleTop = true
+                                restoreState = true
+                            }
+                        }
+                    )
+                }
+            }
+
+            }
+
+            BottomNavigationBar(navController = navController)
+        }
+    }
+}
+
+@Composable
+fun DeviceCard(
+    device: DeviceInfo,
+    onClick: () -> Unit
+) {
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .border(
+                width = 1.dp,
+                color = device.borderColor,
+                shape = RoundedCornerShape(16.dp)
+            ),
+        shape = RoundedCornerShape(16.dp),
+        color = Color.White,
+        shadowElevation = 2.dp
+    ) {
+        Box(
+            modifier = Modifier.padding(20.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(16.dp),
+                verticalAlignment = Alignment.Top
+            ) {
+                // Icon
+                Box(
+                    modifier = Modifier
+                        .size(48.dp)
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(Color.White)
+                        .border(
+                            width = 1.dp,
+                            color = AppColors.Gray100,
+                            shape = RoundedCornerShape(12.dp)
+                        ),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        painter = painterResource(
+                            id = when (device.id) {
+                                "scale" -> R.drawable.ic_scale
+                                "printer" -> R.drawable.ic_printer
+                                "epaper" -> R.drawable.ic_epaper
+                                else -> R.drawable.ic_bluetooth
+                            }
+                        ),
+                        contentDescription = device.name,
+                        modifier = Modifier.size(28.dp),
+                        tint = device.iconColor
+                    )
+                }
+
+                // Info
+                Column(
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    Text(
+                        text = device.name,
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = AppColors.Gray800
+                    )
+                    Text(
+                        text = device.type,
+                        fontSize = 14.sp,
+                        color = AppColors.Gray500
+                    )
+                }
+
+                // Arrow
+                Icon(
+                    painter = painterResource(id = R.drawable.ic_arrow_right),
+                    contentDescription = "Navigate",
+                    modifier = Modifier.size(24.dp),
+                    tint = AppColors.Gray300
+                )
+            }
+        }
+    }
+}

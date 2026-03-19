@@ -4,15 +4,24 @@ plugins {
 }
 
 android {
-    namespace = "com.example.btlearninglab"
-    compileSdk = 34
+    namespace = "com.musumix.btlearninglab"
+    compileSdk = 35
+
+    signingConfigs {
+        create("release") {
+            storeFile = file("../release-keystore.jks")
+            storePassword = "btlearninglab"
+            keyAlias = "release"
+            keyPassword = "btlearninglab"
+        }
+    }
 
     defaultConfig {
-        applicationId = "com.example.btlearninglab"
+        applicationId = "com.musumix.btlearninglab"
         minSdk = 31
-        targetSdk = 34
-        versionCode = 1
-        versionName = "1.0"
+        targetSdk = 35
+        versionCode = 3
+        versionName = "1.2"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -23,6 +32,7 @@ android {
     buildTypes {
         release {
             isMinifyEnabled = false
+            signingConfig = signingConfigs.getByName("release")
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
@@ -50,6 +60,10 @@ android {
     packaging {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
+        }
+        jniLibs {
+            useLegacyPackaging = false
+            keepDebugSymbols += "**/*.so"
         }
     }
 }
