@@ -8,28 +8,54 @@ Bluetooth学習アプリ - Android版
 
 ### 対象デバイス
 
-- Decent Scale (BLE)
-- SM-S210i (StarXpand SDK)
-- Gicisky 2.9" E-Paper (HTTP)
+| デバイス | 通信方式 | SDK/ライブラリ |
+|---------|---------|---------------|
+| Decent Scale | BLE (Bluetooth LE) | Android Bluetooth LE API |
+| SM-S210i | Bluetooth Classic | StarXpand SDK v1.7.0 |
+| Gicisky 2.9" E-Paper | HTTP (ESP32経由) | OkHttp 4.12.0 |
 
 ## 技術スタック
 
-- 言語: Kotlin
-- アーキテクチャ: MVVM (ViewModel + StateFlow + UiState)
-- UI: Jetpack Compose (Material 3)
-- ナビゲーション: Navigation Compose
-- 状態管理: Kotlin Coroutines + Flow
-- BLE: Android Bluetooth LE API (予定)
-- プリンター: StarXpand SDK (予定)
-- HTTP: OkHttp (予定)
+- **言語**: Kotlin
+- **パッケージ名**: `com.musumix.btlearninglab`
+- **アーキテクチャ**: MVVM (ViewModel + StateFlow + UiState)
+- **UI**: Jetpack Compose (Material 3)
+- **ナビゲーション**: Navigation Compose
+- **状態管理**: Kotlin Coroutines + Flow
+- **BLE**: Android Bluetooth LE API
+- **プリンター**: StarXpand SDK
+- **HTTP**: OkHttp
+- **Min SDK**: 31 / **Target SDK**: 35
 
 ## プロジェクト構成
 
 ```
-app/src/main/java/com/example/btlearninglab/
+app/src/main/java/com/musumix/btlearninglab/
 ├── MainActivity.kt
 ├── navigation/
 │   └── NavGraph.kt
+├── data/
+│   ├── ble/
+│   │   ├── BluetoothManager.kt
+│   │   ├── DecentScaleBleClient.kt
+│   │   ├── DecentScaleDataParser.kt
+│   │   ├── BleConnectionState.kt
+│   │   ├── PermissionHelper.kt
+│   │   ├── ScaleDeviceRepository.kt
+│   │   └── ScannedDevice.kt
+│   ├── printer/
+│   │   ├── StarXpandPrinterClient.kt
+│   │   ├── PrinterConnectionState.kt
+│   │   ├── PrinterDeviceRepository.kt
+│   │   └── ScannedPrinter.kt
+│   ├── epaper/
+│   │   ├── EPaperTagRepository.kt
+│   │   └── EPaperTag.kt
+│   ├── http/
+│   │   ├── EPaperHttpClient.kt
+│   │   └── ImageGenerator.kt
+│   └── scale/
+│       └── WeightRepository.kt
 └── ui/
     ├── components/
     │   └── BottomNavigationBar.kt
@@ -44,14 +70,17 @@ app/src/main/java/com/example/btlearninglab/
     ├── scale/
     │   ├── ScaleScreen.kt
     │   ├── ScaleViewModel.kt
+    │   ├── ScaleViewModelFactory.kt
     │   └── ScaleUiState.kt
     ├── printer/
     │   ├── PrinterScreen.kt
     │   ├── PrinterViewModel.kt
+    │   ├── PrinterViewModelFactory.kt
     │   └── PrinterUiState.kt
     ├── epaper/
     │   ├── EPaperScreen.kt
     │   ├── EPaperViewModel.kt
+    │   ├── EPaperViewModelFactory.kt
     │   └── EPaperUiState.kt
     └── log/
         ├── LogScreen.kt
@@ -59,66 +88,44 @@ app/src/main/java/com/example/btlearninglab/
         └── LogUiState.kt
 ```
 
-## 現在の実装
+## 画面構成
 
-### アーキテクチャ
-- **MVVM**: 各画面はScreen (View)、ViewModel、UiState (Model) で構成
-- **単一方向データフロー**: StateFlowによる状態管理
-- **型安全な状態表現**: sealed interfaceによるUiState定義
+- **Home**: デバイス一覧・接続ステータス表示
+- **Scale**: Decent Scaleのリアルタイム重量表示・Tare（ゼロリセット）・BLEスキャン
+- **Printer**: SM-S210iデバイス検出・接続・日本語テキスト印刷
+- **E-Paper**: Giciskyタグ管理・IP/MACアドレス設定・画像プレビュー・送信
+- **Log**: 全デバイスの通信ログ（タイムスタンプ・操作ラベル・サービス詳細付き）
 
-### UI/UX
-- **Material 3デザイン**: Jetpack Composeによる最新UI
-- **統一されたデザインシステム**: AppColorsによるカラーパレット管理
-- **レスポンシブレイアウト**: 縦スクロール対応、適切な余白設定
-- **視覚的フィードバック**: ローディング状態、エラー表示、ボタン無効化
+## 実装状況
 
-### 実装状況
-- **Scale (Decent Scale)**: モック実装 - 接続・切断・Tare（重量リセット）
-- **Printer (SM-S210i)**: StarXpand SDK実装完了 - Bluetooth接続・日本語印刷対応
-- **EPaper (Gicisky)**: モック実装 - HTTP送信（画像アップロード）
-- 各画面で通信ログを表示
+- **Decent Scale (BLE)**: 実装済み - BLEスキャン・接続・リアルタイム重量取得・Tareコマンド・通信ログ
+- **SM-S210i (Printer)**: 実装済み - StarXpand SDKによるBluetooth接続・日本語印刷対応
+- **Gicisky E-Paper (HTTP)**: 実装済み - ESP32 AP経由のHTTP通信・画像送信
 
 ## セットアップ
 
 1. Android Studioでプロジェクトを開く
 2. Gradle Syncを実行
-3. エミュレーターまたは実機でビルド
-
-## 開発状況
-
-### Phase 1: 基盤構築 ✅
-- [x] Androidプロジェクト作成
-- [x] 依存関係追加
-- [x] パーミッション設定
-- [x] 画面遷移の骨組み
-
-### Phase 2: UI実装 ✅
-- [x] MVVMアーキテクチャ導入 (ViewModel + StateFlow + UiState)
-- [x] デザインシステム構築 (AppColors, 共通コンポーネント)
-- [x] HomeScreen (デバイス一覧・ステータス表示)
-- [x] ScaleScreen (重量表示・Tare機能)
-- [x] PrinterScreen (テキスト入力・印刷機能)
-- [x] EPaperScreen (画像プレビュー・送信機能)
-- [x] LogScreen (通信ログ表示)
-- [x] BottomNavigationBar (画面遷移)
-- [x] モック実装による動作確認
-
-### Phase 3: 機能実装 🚧
-- [ ] Decent Scale（Android BLE API）
-- [x] SM-S210i（StarXpand SDK）- 日本語印刷対応
-- [ ] Gicisky（HTTP API）
+3. 実機でビルド（BLE機能はエミュレーター非対応）
 
 ## ビルド方法
 
 ```bash
+# デバッグビルド
 ./gradlew assembleDebug
+
+# リリースビルド（署名付きAAB）
+./gradlew bundleRelease
 ```
+
+リリースビルドには `release-keystore.jks` が必要です（`.gitignore`に含まれているためリポジトリには含まれません）。
 
 ## 必要なパーミッション
 
-- Bluetooth関連 (BLUETOOTH, BLUETOOTH_ADMIN, BLUETOOTH_CONNECT, BLUETOOTH_SCAN)
-- 位置情報 (ACCESS_FINE_LOCATION, ACCESS_COARSE_LOCATION)
-- ネットワーク (INTERNET, ACCESS_NETWORK_STATE)
+- `BLUETOOTH_CONNECT` - Bluetooth接続操作
+- `BLUETOOTH_SCAN` - デバイス検出（位置情報不要）
+- `INTERNET` - E-Paper HTTP通信
+- `ACCESS_NETWORK_STATE` - ネットワーク状態確認
 
 ## ライセンス
 
