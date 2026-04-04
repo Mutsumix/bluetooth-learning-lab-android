@@ -23,6 +23,7 @@ import androidx.navigation.NavController
 import com.musumix.btlearninglab.R
 import com.musumix.btlearninglab.ui.theme.AppColors
 import com.musumix.btlearninglab.ui.components.BottomNavigationBar
+import com.musumix.btlearninglab.ui.components.CommunicationLogPanel
 
 @Composable
 fun LogScreen(
@@ -58,6 +59,10 @@ private fun LogScreenContent(
             DeviceType.PRINTER -> AppColors.PastelPeach
             DeviceType.EPAPER -> AppColors.PastelLavender
         }
+    }
+
+    val plainLogText = uiState.logs.joinToString("\n") { entry ->
+        "[${entry.time}] ${entry.device} | ${entry.message}"
     }
 
     Box(
@@ -188,6 +193,18 @@ private fun LogScreenContent(
                         }
                     }
                 }
+
+                CommunicationLogPanel(
+                    title = "選択・コピー",
+                    showLogIcon = false,
+                    logText = plainLogText,
+                    emptyPlaceholder = "(ログはありません)",
+                    modifier = Modifier
+                        .padding(horizontal = 16.dp)
+                        .padding(bottom = 16.dp),
+                    minHeight = 100.dp,
+                    maxHeight = 240.dp
+                )
 
                 // Stats
                 Surface(

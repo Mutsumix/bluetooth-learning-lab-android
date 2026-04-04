@@ -26,6 +26,7 @@ import androidx.navigation.NavController
 import com.musumix.btlearninglab.R
 import com.musumix.btlearninglab.ui.theme.AppColors
 import com.musumix.btlearninglab.ui.components.BottomNavigationBar
+import com.musumix.btlearninglab.ui.components.CommunicationLogPanel
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -511,77 +512,15 @@ private fun EPaperScreenContent(
                 }
             }
 
-            // Communication Log
-            Surface(
+            CommunicationLogPanel(
+                logText = logs.joinToString("\n"),
+                emptyPlaceholder = "(送信してください)",
                 modifier = Modifier
-                    .fillMaxWidth()
                     .padding(horizontal = 24.dp)
-                    .padding(bottom = 24.dp)
-                    .border(
-                        width = 1.dp,
-                        color = AppColors.Primary100,
-                        shape = RoundedCornerShape(16.dp)
-                    ),
-                shape = RoundedCornerShape(16.dp),
-                color = Color.White,
-                shadowElevation = 1.dp
-            ) {
-                Column {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 20.dp, vertical = 12.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        Icon(
-                            painter = painterResource(id = R.drawable.ic_log),
-                            contentDescription = "Log",
-                            modifier = Modifier.size(18.dp),
-                            tint = AppColors.Primary500
-                        )
-                        Text(
-                            text = "通信ログ",
-                            fontSize = 14.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            color = AppColors.Gray600
-                        )
-                    }
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .background(AppColors.Gray50.copy(alpha = 0.5f))
-                            .heightIn(min = 100.dp, max = 300.dp),
-                        contentAlignment = if (logs.isEmpty()) Alignment.Center else Alignment.TopStart
-                    ) {
-                        if (logs.isEmpty()) {
-                            Text(
-                                text = "(送信してください)",
-                                fontSize = 12.sp,
-                                color = AppColors.Gray400,
-                                fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace
-                            )
-                        } else {
-                            Column(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .verticalScroll(rememberScrollState())
-                                    .padding(20.dp),
-                                verticalArrangement = Arrangement.spacedBy(6.dp)
-                            ) {
-                                logs.forEach { log ->
-                                    Text(
-                                        text = log,
-                                        fontSize = 12.sp,
-                                        color = AppColors.Primary600,
-                                        fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace
-                                    )
-                                }
-                            }
-                        }
-                    }
-                }
-            }
+                    .padding(bottom = 24.dp),
+                minHeight = 100.dp,
+                maxHeight = 300.dp
+            )
             }
 
                 BottomNavigationBar(navController = navController)
